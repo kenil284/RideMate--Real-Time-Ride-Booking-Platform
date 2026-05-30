@@ -23,7 +23,7 @@ export const registerUserController = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { fullname, email, password } = req.body;
+  const { fullname, email, password } = req.body || {};
 
   const existingUser = await userModel.findOne({ email });
 
@@ -78,7 +78,7 @@ export const loginuserController = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { email, password } = req.body;
+  const { email, password } = req.body || {};
 
   const user = await userModel.findOne({ email }).select("+password");
 
@@ -160,7 +160,6 @@ export const logoutuserController = async (req, res) => {
       req.cookies?.refreshToken ||
       req.body.refreshToken;
 
-      console.log("accesstoken",accessToken,"refreshtoken", refreshToken)
 
     if (accessToken) {
       await blackListTokenModel.create({ token: accessToken });

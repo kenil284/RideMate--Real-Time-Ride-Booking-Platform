@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import userRouter from "./routes/user.route.js";
+import captainRouter from "./routes/captain.route.js";
 
 
 export const app = express();
@@ -16,3 +17,4 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true})); // Form data
 
 app.use("/api/user", userRouter);
+app.use("/api/captain",captainRouter)

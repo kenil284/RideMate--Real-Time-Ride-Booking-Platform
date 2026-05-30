@@ -1,0 +1,209 @@
+import { validationResult } from "express-validator";
+import captainModel from "../Models/captian.model.js";
+import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js";
+import { hashPassword, verifyPassword } from "../utils/password.util.js";
+
+/**
+ * @name registerCaptainController
+ * @description Register a new captain, expect fullname:{firstname,lastname}, email, password, phone, and vehicle details
+ * @access Public
+ */
+export const registerCaptainController = async (req, res) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+
+    try {
+        const {
+            fullname,
+            email,
+            password,
+            phone,
+            vehicle,
+            location
+        } = req.body || {};
+
+        const { firstname, lastname } = fullname || {};
+        const { color, plate, capacity, vehicleType } = vehicle || {};
+        const { coordinates } = location || {};
+
+        if (
+            !firstname ||
+            !email ||
+            !password ||
+            !phone ||
+            !color ||
+            !plate ||
+            !capacity ||
+            !vehicleType
+        ) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
+        }
+
+        const existingCaptain = await captainModel.findOne({ email });
+
+        if (existingCaptain) {
+            return res.status(400).json({
+                message: "Email already in use"
+            });
+        }
+
+        const passwordHash = await hashPassword(password);
+
+        const captain = await captainModel.create({
+            fullname: {
+                firstname,
+                lastname
+            },
+            email,
+            password: passwordHash,
+            phone,
+            vehicle: {
+                color,
+                plate,
+                capacity,
+                vehicleType
+            },
+            location: {
+                type: "Point",
+                coordinates: coordinates || [0, 0]
+            }
+        });
+
+        res.status(201).json({
+            message: "Captain registered successfully",
+            captain,
+        });
+
+    }
+    catch (error) {
+        console.error("Error registering captain:", error);
+        res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+/**
+ * @name loginCaptainController
+ * @description Login an existing captain, expect email and password in the request body
+ * @access Public
+ */
+export const loginCaptainController = async (req, res) => {
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+
+    console.log("Login request body:", req.body); // Debug log
+    try {
+        const { email, password } = req.body || {};
+
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
+            })
+        }
+
+        const captain = await captainModel.findOne({ email }).select("+password");
+
+        if (!captain) {
+            return res.status(400).json({
+                message: "Invalid email or password"
+            })
+        }
+
+        console.log("Captain found:", captain); // Debug log
+
+        const isPasswordValid = await verifyPassword(password, captain.password);
+
+        console.log("Password validation result:", isPasswordValid); // Debug log
+
+        if (!isPasswordValid) {
+            return res.status(400).json({
+                message: "Invalid email or password"
+            })
+        }
+
+        const accessToken = generateAccessToken(captain._id);
+        const refreshToken = generateRefreshToken(captain._id);
+
+        res.cookie("accessToken", accessToken, {
+            httpOnly: true,
+            maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000
+        });
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
+        });
+
+        res.status(200).json({
+            message: "Captain logged in successfully",
+            accessToken,
+            refreshToken,
+        })
+
+    }
+    catch (error) {
+        console.error("Error logging in captain:", error);
+        res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+/**
+ * @name getCaptainProfileController
+ * @description Get captain profile
+ * @access Private
+ */
+export const getCaptainProfileController = async (req, res) => {
+    try {
+        const captainId = req.userId;
+        const captain = await captainModel.findById(captainId)
+
+        if (!captain) {
+            return res.status(404).json({
+                message: "Captain not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Captain profile retrieved successfully",
+            captain,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
+
+/**
+ * @name logoutCaptainController
+ * @description Captain logout, clear access and refresh cookies
+ * @access Private
+ */
+export const logoutCaptainController = async (req, res) => {
+    try {
+        res.clearCookie("accessToken");
+        res.clearCookie("refreshToken");
+        res.status(200).json({
+            message: "Captain logged out successfully",
+        });
+    }
+
+    catch (error) {
+        res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+}
