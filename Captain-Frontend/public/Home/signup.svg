@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 51.2 (57519) - http://www.bohemiancoding.com/sketch -->
+    <title>icon/documentCheck</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="icon/documentCheck" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-3" transform="translate(1.000000, 1.000000)" fill="#000000">
+            <polygon id="Fill-1" points="16 10.1206 16 5.8786 9.5 12.3786 6 8.8786 6 13.1206 9.5 16.6206"></polygon>
+            <path d="M0,22 L22,22 L22,0 L0,0 L0,22 Z M3,19 L19,19 L19,3 L3,3 L3,19 Z" id="Fill-2"></path>
+        </g>
+    </g>
+</svg>
