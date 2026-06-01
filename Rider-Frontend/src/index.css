@@ -9,6 +9,57 @@
 html,
 body,
 #root {
-  min-height: 100%;
   background-color: #eeeeee;
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+@keyframes locationOpen {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+
+
+body {
+  overflow-x: hidden;
+}
+
+@keyframes lookingLineMove {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.looking-line {
+  width: 70%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #93c5fd 25%,
+    #2563eb 50%,
+    #93c5fd 75%,
+    transparent 100%
+  );
+  animation: lookingLineMove 1.4s ease-in-out infinite;
+}
+
+
+.leaflet-control-container {
+  display: none !important;
 }

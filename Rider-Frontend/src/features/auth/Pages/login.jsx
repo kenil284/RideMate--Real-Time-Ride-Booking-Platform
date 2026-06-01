@@ -1,7 +1,47 @@
 import React from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../Hooks/useAuth";
+import {useNavigate} from "react-router-dom"
 
 const Login = () => {
+
+  const [email,setemail] = useState("")
+  const [password,setpassword] = useState("")
+
+  const history = useNavigate()
+
+  const {handleLogin}= useAuth()
+
+
+
+  const submitHandler = async (e) => {
+    e.preventDefault()
+
+    const formData = {
+    email,
+    password
+  }
+
+  try {
+   const response =  await handleLogin(formData)
+
+   history("/ride")
+
+  } catch (error) {
+  const err = error.response?.data;
+
+  const message =
+    err?.message ||
+    err?.errors?.[0]?.msg ||
+    "Something went wrong";
+
+  alert(message);
+}
+
+
+  }
+ 
   return (
     <div className="min-h-screen flex flex-col font-sans">
       {/* Header */}
@@ -22,10 +62,12 @@ const Login = () => {
             Log in to your account
           </h2>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={submitHandler}>
             <input
               type="email"
               name="email"
+              value={email}
+              onChange={(e) => setemail(e.target.value)}
               placeholder="Enter email"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
@@ -33,6 +75,8 @@ const Login = () => {
             <input
               type="password"
               name="password"
+              value={password}
+              onChange={(e) => setpassword(e.target.value)}
               placeholder="Enter password"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />

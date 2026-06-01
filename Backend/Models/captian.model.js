@@ -17,39 +17,33 @@ const captainSchema = new mongoose.Schema(
                 minlength: [3, "Last name must be at least 3 characters"],
             },
         },
-
         email: {
             type: String,
             required: [true, "Email is required"],
             unique: true,
             lowercase: true,
         },
-
         password: {
             type: String,
             required: [true, "Password is required"],
             minlength: [6, "Password must be at least 6 characters"],
             select: false,
         },
-
         phone: {
             type: String,
             required: [true, "Phone number is required"],
             unique: true,
         },
-
-        status: {
-            type: String,
-            enum: ["active", "inactive", "blocked"],
-            default: "inactive",
-        },
-
         isAvailable: {
             type: Boolean,
             default: false,
         },
-
         vehicle: {
+            vehicleName: {
+                type: String,
+                required: [true, "Vehicle name is required"],
+                trim: true,
+            },
             color: {
                 type: String,
                 required: [true, "Vehicle color is required"],
@@ -103,6 +97,11 @@ const captainSchema = new mongoose.Schema(
 
         socketId: {
             type: String,
+        },
+        currentRide: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Ride",
+            default: null,
         },
     },
     {

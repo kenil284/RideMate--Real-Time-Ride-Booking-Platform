@@ -7,6 +7,7 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './features/Home'
 import Login from './features/auth/Pages/login'
 import Register from './features/auth/Pages/Register'
+import Ride from './features/Rides/pages/Ride'
 
 function App() {
 
@@ -19,7 +20,7 @@ function App() {
 
       <Route path='/register' element={<Register/>} />
 
-
+    <Route path='/ride' element={<Ride/>}/>
 
 
     </Routes>
