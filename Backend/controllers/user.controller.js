@@ -1,14 +1,14 @@
 import { validationResult } from "express-validator";
-import userModel from "../Models/user.model.js";
+import userModel from "../models/user.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js";
 import { hashPassword, verifyPassword } from "../utils/password.util.js";
-import refreshTokenModel from "../Models/refreshToken.model.js";
-import blackListTokenModel from "../Models/blackListToken.model.js";
+import refreshTokenModel from "../models/refreshToken.model.js";
+import blackListTokenModel from "../models/blackListToken.model.js";
 
 
 /**
  * @name registerUserController
- * @description register a new user, expect fullname:{firstname, lastname}, email and password in the request body
+ * @description register a new user, expect fullname:{firstname, lastname}, email, password and phone in the request body
  * @access Public
  */
 
@@ -23,7 +23,7 @@ export const registerUserController = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { fullname, email, password } = req.body || {};
+  const { fullname, email, password , phone } = req.body || {};
 
   const existingUser = await userModel.findOne({ email });
 
@@ -37,31 +37,30 @@ export const registerUserController = async (req, res) => {
     fullname,
     email,
     password: hashedPassword,
+    phone
   });
 
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+  // const accessToken = generateAccessToken(user._id);
+  // const refreshToken = generateRefreshToken(user._id);
 
-  await refreshTokenModel.create({
-    token: refreshToken,
-    user: user._id,
-  });
+  // await refreshTokenModel.create({
+  //   token: refreshToken,
+  //   user: user._id,
+  // });
 
-  res.cookie("accessToken", accessToken, {
-    ...cookieOptions,
-    maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000
-  });
+  // res.cookie("accessToken", accessToken, {
+  //   ...cookieOptions,
+  //   maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000
+  // });
 
-  res.cookie("refreshToken", refreshToken, {
-    ...cookieOptions,
-    maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
-  });
+  // res.cookie("refreshToken", refreshToken, {
+  //   ...cookieOptions,
+  //   maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
+  // });
 
   res.status(201).json({
     message: "User registered successfully",
-    accessToken,
-    refreshToken,
-    user,
+    user
   });
 };
 
@@ -148,7 +147,7 @@ export const userProfileController = async (req, res) => {
  * @access Private
  */
 
-export const logoutuserController = async (req, res) => {
+export const logoutUserController = async (req, res) => {
   try {
 
     

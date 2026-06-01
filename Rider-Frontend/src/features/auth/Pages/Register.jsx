@@ -1,7 +1,52 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../Hooks/useAuth";
 
 const Register = () => {
+
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const history = useNavigate()
+
+  const { handleRegister, openalert } = useAuth()
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      fullname: {
+        firstname,
+        lastname
+      },
+      email,
+      password,
+      phone
+    };
+
+    try {
+      setIsSubmitting(true);
+      const response = await handleRegister(formData);
+      openalert("Success", response.message || "Registration successful");
+      history("/login");
+    }
+    catch (error) {
+      if (error?.errors?.length > 0) {
+        openalert("Error", error.errors[0].msg);
+      } else {
+        openalert("Error", error?.message || "Registration failed");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+
+  }
+
+
   return (
     <div className="min-h-screen flex flex-col font-sans">
       {/* Header */}
@@ -26,17 +71,22 @@ const Register = () => {
             Sign up to start riding with Uber.
           </p>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={submitHandler}>
             <input
               type="text"
-              name="fullname[firstname]"
+              name="firstname"
+              value={firstname}
+              onChange={(e) => setFirstname(e.target.value)}
               placeholder="First name"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
 
+
             <input
               type="text"
-              name="fullname[lastname]"
+              name="lastname"
+              value={lastname}
+              onChange={(e) => setLastname(e.target.value)}
               placeholder="Last name (optional)"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
@@ -44,6 +94,8 @@ const Register = () => {
             <input
               type="email"
               name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter email"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
@@ -51,15 +103,32 @@ const Register = () => {
             <input
               type="password"
               name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Create password"
+              className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
+            />
+
+            <input
+              type="number"
+              name="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
               className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
 
             <button
               type="submit"
-              className="w-full h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97]"
+              disabled={isSubmitting}
+              className={`w-full h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97] flex items-center justify-center ${isSubmitting ? "opacity-70 cursor-not-allowed active:scale-100" : ""
+                }`}
             >
-              Create account
+              {isSubmitting ? (
+                <span className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                "Create account"
+              )}
             </button>
           </form>
 

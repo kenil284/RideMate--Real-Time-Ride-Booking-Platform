@@ -1,4 +1,4 @@
-import refreshTokenModel from "../Models/refreshToken.model";
+import refreshTokenModel from "../models/refreshToken.model";
 import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.util";
 
 const cookieOptions = {

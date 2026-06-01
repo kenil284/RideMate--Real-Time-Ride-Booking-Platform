@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginuserController,logoutuserController, registerUserController, userProfileController } from "../controllers/user.controller.js";
+import { loginuserController, logoutUserController, registerUserController, userProfileController } from "../controllers/user.controller.js";
 import { body } from "express-validator";
 import { authUser } from "../middlewares/auth.middleware.js";
 
@@ -14,9 +14,11 @@ const userRouter = Router()
 
 userRouter.post("/register",
     [
-        body('email').isEmail().withMessage('Invalid Email'),
+       
         body('fullname.firstname').isLength({ min: 3 }).withMessage('First name must be at least 3 characters long'),
-        body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+         body('email').isEmail().withMessage('Invalid Email'),
+        body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+        body("phone").trim().notEmpty().withMessage("Phone number is required").matches(/^(\+91)?[6-9]\d{9}$/).withMessage("Enter a valid mobile number")
     ],
     registerUserController)
 
@@ -26,10 +28,10 @@ userRouter.post("/register",
  * @access Public
  */
 
-userRouter.post("/login",[
+userRouter.post("/login", [
     body('email').isEmail().withMessage('Invalid Email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
-],loginuserController)
+], loginuserController)
 
 /**
  * @route GET /api/user/profile
@@ -37,7 +39,7 @@ userRouter.post("/login",[
  * @access Private
  */
 
-userRouter.get("/profile",authUser,userProfileController)
+userRouter.get("/profile", authUser, userProfileController)
 
 /**
  * @route POST /api/user/logout
@@ -45,7 +47,7 @@ userRouter.get("/profile",authUser,userProfileController)
  * @access Private
  */
 
-userRouter.post("/logout",authUser,logoutuserController)
+userRouter.post("/logout", authUser, logoutUserController)
 
 
 export default userRouter;

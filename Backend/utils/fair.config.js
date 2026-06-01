@@ -1,0 +1,32 @@
+export const fareConfig = [
+  {
+    type: "bike",
+    name: "Bike",
+    capacity: 1,
+    baseFare: 20,
+    perKm: 8,
+    perMin: 1,
+    minFare: 35,
+    durationMultiplier: 0.85,
+  },
+  {
+    type: "auto",
+    name: "Auto",
+    capacity: 3,
+    baseFare: 30,
+    perKm: 12,
+    perMin: 1.5,
+    minFare: 50,
+    durationMultiplier: 1,
+  },
+  {
+    type: "car",
+    name: "Car",
+    capacity: 4,
+    baseFare: 45,
+    perKm: 16,
+    perMin: 2,
+    minFare: 80,
+    durationMultiplier: 1.1,
+  },
+];

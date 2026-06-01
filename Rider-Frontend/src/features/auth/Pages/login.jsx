@@ -8,10 +8,11 @@ const Login = () => {
 
   const [email,setemail] = useState("")
   const [password,setpassword] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const history = useNavigate()
 
-  const {handleLogin}= useAuth()
+  const {handleLogin,openalert}= useAuth()
 
 
 
@@ -24,22 +25,20 @@ const Login = () => {
   }
 
   try {
-   const response =  await handleLogin(formData)
-
-   history("/ride")
-
-  } catch (error) {
-  const err = error.response?.data;
-
-  const message =
-    err?.message ||
-    err?.errors?.[0]?.msg ||
-    "Something went wrong";
-
-  alert(message);
-}
-
-
+      setIsSubmitting(true);
+      const response = await handleLogin(formData);
+      openalert("Success", response.message || "Login successful");
+      history("/ride")
+    }
+    catch (error) {
+      if (error?.errors?.length > 0) {
+        openalert("Error", error.errors[0].msg);
+      } else {
+        openalert("Error", error?.message || "Login failed");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
  
   return (
@@ -83,9 +82,15 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97]"
+              disabled={isSubmitting}
+              className={`w-full h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97] flex items-center justify-center ${isSubmitting ? "opacity-70 cursor-not-allowed active:scale-100" : ""
+                }`}
             >
-              Login
+              {isSubmitting ? (
+                <span className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin"></span>
+              ) : (
+                "Log in"
+              )}
             </button>
           </form>
 
