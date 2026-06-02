@@ -22,78 +22,97 @@ const VehicleOptions = ({ vehicleOptions = [], onSelectVehicle, onEdit }) => {
   }, [vehicleOptions]);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="shrink-0">
-        <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
-
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold">Choose a ride</h2>
-
-          <button
-            type="button"
-            onClick={onEdit}
-            className="text-sm font-semibold underline"
-          >
-            Edit
-          </button>
+  <div className="h-full flex flex-col font-sans">
+    {/* Header */}
+    <div className="shrink-0">
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-black">
+            Choose a ride
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Select your preferred vehicle
+          </p>
         </div>
-      </div>
 
-      <div className="flex-1 overflow-y-auto space-y-3 pb-4">
-        {vehicleOptions.map((vehicle) => (
-          <div
-            key={vehicle.type}
-            onClick={() => setSelected(vehicle)}
-            className={`grid grid-cols-[70px_1fr_80px] items-center gap-3 rounded-xl p-3 cursor-pointer active:scale-[0.98] transition border-2 ${
-              selected?.type === vehicle.type
-                ? "border-black"
-                : "border-transparent"
-            }`}
-          >
-            <div className="w-[60px] h-[58px] bg-[#eeeeee] rounded-lg flex items-center justify-center shrink-0">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="text-sm font-bold text-black bg-[#f3f3f3] px-4 py-2 rounded-full active:scale-95 transition"
+        >
+          Edit
+        </button>
+      </div>
+    </div>
+
+    {/* Vehicle Options */}
+    <div className="flex-1 overflow-y-auto space-y-4 pb-4 pr-1">
+      {vehicleOptions.map((vehicle) => (
+        <div
+          key={vehicle.type}
+          onClick={() => setSelected(vehicle)}
+          className={`bg-white rounded-3xl p-4 cursor-pointer active:scale-[0.98] transition border shadow-[0_2px_12px_rgba(0,0,0,0.10)] ${
+            selected?.type === vehicle.type
+              ? "border-black border-2"
+              : "border-gray-100"
+          }`}
+        >
+          <div className="grid grid-cols-[82px_1fr_auto] gap-4 items-center">
+            {/* Image */}
+            <div className="w-[82px] h-[82px] rounded-2xl flex items-center justify-center shrink-0">
               <img
-                src={vehicle.image || vehicleImages[vehicle.type]}
+                src={vehicleImages[vehicle.type]}
                 alt={vehicle.name}
                 className="w-full h-full object-contain"
               />
             </div>
 
+            {/* Info */}
             <div className="min-w-0">
-              <h3 className="text-lg font-bold leading-5">
-                {vehicle.name}{" "}
-                <span className="text-sm font-semibold">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-bold text-black leading-6">
+                  {vehicle.name}
+                </h3>
+
+                <span className="text-xs font-bold bg-[#eeeeee] px-2 py-1 rounded-full">
                   👤 {vehicle.capacity}
                 </span>
-              </h3>
+              </div>
 
-              <p className="text-sm font-medium leading-5">
-                {vehicle.displayDuration || `${vehicle.durationMin} min`}
+              <p className="text-sm text-gray-500 mt-2 leading-5 font-medium">
+                {vehicle.displayDuration || `${vehicle.durationMin} min`} •{" "}
+                {vehicle.displayDistance || `${vehicle.distanceKm} km`}
               </p>
 
-              <p className="text-sm text-gray-600 leading-5">
+              <p className="text-sm text-gray-600 leading-5 mt-1 capitalize">
                 {vehicle.desc || vehicleDesc[vehicle.type]}
               </p>
             </div>
 
-            <p className="font-bold text-lg text-right w-[80px]">
-              {vehicle.displayFare || `₹${vehicle.fare}`}
-            </p>
+            {/* Fare */}
+            <div className="text-right self-center shrink-0">
+              <p className="font-bold text-xl text-black whitespace-nowrap">
+                {vehicle.displayFare || `₹${vehicle.fare}`}
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      <div className="shrink-0 pt-3 bg-white">
-        <button
-          type="button"
-          disabled={!selected}
-          onClick={() => onSelectVehicle(selected)}
-          className="w-full h-[52px] bg-black text-white rounded-lg font-semibold active:scale-[0.97] transition disabled:bg-gray-400"
-        >
-          Confirm ride
-        </button>
-      </div>
+        </div>
+      ))}
     </div>
-  );
+
+    {/* Bottom Button */}
+    <div className="shrink-0 pt-3 bg-white">
+      <button
+        type="button"
+        disabled={!selected}
+        onClick={() => onSelectVehicle(selected)}
+        className="w-full h-[54px] bg-black text-white rounded-xl font-bold text-base active:scale-[0.97] transition disabled:bg-gray-400"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+);
 };
 
 export default VehicleOptions;

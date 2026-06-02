@@ -3,9 +3,25 @@ import { getDistanceTimeService } from "./maps.service.js";
 
 export const getRideEstimateService = async ({pickupLat,pickupLng,destinationLat,destinationLng}) => {
 
-  const vehicleOptions = await Promise.all(
-    fareConfig.map(async (vehicle) => {
+  const formatDuration = (durationMin) => {
+  if (durationMin < 60) {
+    return `${durationMin} min`;
+  }
 
+  const hours = Math.floor(durationMin / 60);
+  const minutes = durationMin % 60;
+
+  if (minutes === 0) {
+    return `${hours} hr`;
+  }
+
+  return `${hours} hr ${minutes} min`;
+};
+
+  const vehicleOptions = [];
+
+  for (const vehicle of fareConfig) {
+    try {
       let mode = "drive";
 
       if (vehicle.type === "bike") {
@@ -20,13 +36,14 @@ export const getRideEstimateService = async ({pickupLat,pickupLng,destinationLat
         mode = "drive";
       }
 
-      const { distanceKm, durationMin, routeCoordinates } = await getDistanceTimeService({
-        pickupLat,
-        pickupLng,
-        destinationLat,
-        destinationLng,
-        mode,
-      });
+      const { distanceKm, durationMin, routeCoordinates } =
+        await getDistanceTimeService({
+          pickupLat,
+          pickupLng,
+          destinationLat,
+          destinationLng,
+          mode,
+        });
 
       const fare =
         vehicle.baseFare +
@@ -35,7 +52,7 @@ export const getRideEstimateService = async ({pickupLat,pickupLng,destinationLat
 
       const finalFare = Math.max(Math.ceil(fare), vehicle.minFare);
 
-      return {
+      vehicleOptions.push({
         type: vehicle.type,
         name: vehicle.name,
         capacity: vehicle.capacity,
@@ -44,11 +61,17 @@ export const getRideEstimateService = async ({pickupLat,pickupLng,destinationLat
         fare: finalFare,
         displayFare: `₹${finalFare}`,
         displayDistance: `${distanceKm} km`,
-        displayDuration: `${durationMin} min`,
+        displayDuration: formatDuration(durationMin),
         routeCoordinates,
-      };
-    })
-  );
+      });
+    } catch (error) {
+
+    }
+  }
+
+  if (vehicleOptions.length === 0) {
+    throw new Error("No ride options available for this route");
+  }
 
   return {
     vehicleOptions,

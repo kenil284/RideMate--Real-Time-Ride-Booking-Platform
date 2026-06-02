@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import BottomSheet from "../component/BottomSheet";
 import LocationForm from "../component/LocationForm";
@@ -88,18 +88,27 @@ const Ride = () => {
             rideData.destination
         );
 
-        if (options.length > 0) {
+        if (options?.length > 0) {
             setStage("vehicle")
         }
     }
 
     const selectVehicle = (vehicle) => {
-        updateRideData("vehicle", vehicle);
-        updateRideData("vehicleType", vehicle.type);
-        updateRideData("fare", vehicle.price);
+    setRideData((prev) => ({
+        ...prev,
+        vehicle: vehicle,
+        vehicleType: vehicle.type,
+        fare: vehicle.fare,
+        distanceKm: vehicle.distanceKm,
+        durationMin: vehicle.durationMin,
+    }));
 
-        setStage("confirm")
-    }
+    setStage("confirm");
+};
+
+useEffect(() => {
+    console.log("Updated rideData:", rideData);
+}, [rideData]);
 
     const confirmRide = () => {
         setStage("looking");

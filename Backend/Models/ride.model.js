@@ -104,8 +104,6 @@ const rideSchema = new mongoose.Schema(
         status: {
             type: String,
             enum: [
-                "draft",
-                "vehicle_selected",
                 "looking",
                 "accepted",
                 "arrived",

@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { getRideEstimateApi } from "../Service/ride.api";
+import { userContext } from "../../../Context/UserContextProvider";
 
 const useRideEstimates = () => {
     const [isRideSearching, setIsRideSearching] = useState(false)
     const [vehicleOptions, setVehicleOptions] = useState([])
+
+    const { openalert } = useContext(userContext)
 
     const getRideEstimates = async (pickup, destination) => {
         try {
@@ -23,7 +26,14 @@ const useRideEstimates = () => {
             return options;
 
         } catch (error) {
-            setVehicleOptions([])
+
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                "Unable to fetch ride options";
+                
+            openalert("Error", message)
+
         } finally {
             setIsRideSearching(false)
         }
