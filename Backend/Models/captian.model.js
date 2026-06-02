@@ -1,6 +1,20 @@
 // Models/captain.model.js
 
 import mongoose from "mongoose";
+const locationSchema = new mongoose.Schema(
+    {
+        type: {
+            type: String,
+            enum: ["Point"],
+            required: true,
+        },
+        coordinates: {
+            type: [Number], // [longitude, latitude]
+            required: true,
+        },
+    },
+    { _id: false }
+);
 
 const captainSchema = new mongoose.Schema(
     {
@@ -13,8 +27,7 @@ const captainSchema = new mongoose.Schema(
             },
             lastname: {
                 type: String,
-                trim: true,
-                minlength: [3, "Last name must be at least 3 characters"],
+                trim: true
             },
         },
         email: {
@@ -72,17 +85,9 @@ const captainSchema = new mongoose.Schema(
         },
 
         location: {
-            type: {
-                type: String,
-                enum: ["Point"],
-                default: "Point",
-            },
-            coordinates: {
-                type: [Number], // [longitude, latitude]
-                default: undefined,
-            },
+            type: locationSchema,
+            default: undefined,
         },
-
         rating: {
             type: Number,
             default: 0,

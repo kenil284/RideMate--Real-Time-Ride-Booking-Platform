@@ -1,4 +1,5 @@
 import blackListTokenModel from "../models/blackListToken.model.js";
+import userModel from "../models/user.model.js";
 import { verifyAccessToken } from "../utils/jwt.util.js";
 
 export const authUser = async (req, res, next) => {
@@ -12,8 +13,17 @@ export const authUser = async (req, res, next) => {
 
     try {
         const decoded = verifyAccessToken(token);
-        req.userId = decoded.userId;
-        next();
+
+        const user = await userModel.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(401).json({
+                message: "User not found",
+            });
+        }
+
+        req.userId = user._id;
+        req.user = user;
 
     } catch (error) {
         return res.status(400).json({
@@ -28,6 +38,8 @@ export const authUser = async (req, res, next) => {
             message: "Unauthorized"
         })
     }
+
+    next();
 }
 
 

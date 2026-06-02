@@ -1,7 +1,29 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link,useNavigate } from "react-router-dom";
+import { useAuth } from "../Hooks/useAuth";
 
 const CaptainLogin = () => {
+
+
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const { handleLogin } = useAuth()
+
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const data = await handleLogin({ email, password })
+
+    if (!data) {
+      return
+    }
+
+    navigate("/captain-home")
+  }
+
   return (
     <div className="min-h-screen flex flex-col font-sans">
       {/* Header */}
@@ -23,10 +45,12 @@ const CaptainLogin = () => {
             What's your captain email?
           </h2>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <input
               type="email"
               name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter captain email"
               className="w-full h-[52px] bg-[#f3f3f3] border border-black rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />
@@ -34,6 +58,8 @@ const CaptainLogin = () => {
             <input
               type="password"
               name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter password"
               className="w-full h-[52px] bg-[#f3f3f3] border border-black rounded-lg px-4 text-[16px] outline-none focus:ring-2 focus:ring-black transition"
             />

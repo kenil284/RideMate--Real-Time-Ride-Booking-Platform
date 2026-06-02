@@ -36,6 +36,10 @@ const registerCaptainValidation = [
   body("vehicle.vehicleType")
     .isIn(["car", "bike", "auto"])
     .withMessage("Invalid vehicle type"),
+
+  body("vehicle.vehicleName")
+    .notEmpty()
+    .withMessage("Vehicle Name is Required")
 ];
 
 

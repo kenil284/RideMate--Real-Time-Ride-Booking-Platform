@@ -1,32 +1,48 @@
 import { Router } from "express";
-import { getCurrentLocationController, getRideEstimateController, getSuggestionsController } from "../controllers/ride.controller.js";
-import { query } from "express-validator";
+import { body } from "express-validator";
 import { authUser } from "../middlewares/auth.middleware.js";
+import { createRideController, getActiveRideController } from "../controllers/ride.controller.js";
+
+
+export const createRideValidator = [
+    body("pickup.address")
+        .notEmpty()
+        .withMessage("Pickup address is required"),
+
+    body("destination.address")
+        .notEmpty()
+        .withMessage("Destination address is required"),
+
+    body("vehicle.type")
+        .isIn(["bike", "auto", "car"])
+        .withMessage("Vehicle type must be bike, auto, or car"),
+
+    body("fare")
+        .isNumeric()
+        .withMessage("Fare is required"),
+
+    body("pickup.lat").optional().isNumeric(),
+    body("pickup.lng").optional().isNumeric(),
+
+    body("destination.lat").optional().isNumeric(),
+    body("destination.lng").optional().isNumeric(),
+
+    body("distanceKm").optional().isNumeric(),
+    body("durationMin").optional().isNumeric(),
+
+    body("vehicle.name").optional().isString(),
+    body("vehicle.capacity").optional().isNumeric(),
+
+    body("paymentMethod")
+        .optional()
+        .isIn(["cash", "online"])
+        .withMessage("Payment method must be cash or online"),
+]
 
 const rideRouter = Router()
 
-/**
- * @route GET /api/ride/get-suggestions
- * @description Get location suggestions for ride pickup/destination search
- * @access Private
- */
-rideRouter.get("/get-suggestions", authUser, getSuggestionsController)
+rideRouter.post("/create-ride", authUser, createRideValidator, createRideController)
 
-/**
- * @route GET /api/ride/get-ride-estimate
- * @description Get distance, duration, and fare estimate for a ride route
- * @access Private
- */
-rideRouter.get(
-  "/get-ride-estimate", authUser, [
-    query("pickupLat").notEmpty().withMessage("Pickup latitude is required"),
-    query("pickupLng").notEmpty().withMessage("Pickup longitude is required"),
-    query("destinationLat").notEmpty().withMessage("Destination latitude is required"),
-    query("destinationLng").notEmpty().withMessage("Destination longitude is required"),
-  ],
-    getRideEstimateController
-)
+rideRouter.get("/get-active-ride",authUser,getActiveRideController)
 
-rideRouter.get("/get-current-location", authUser,getCurrentLocationController)
-
-export default rideRouter
+export default rideRouter;

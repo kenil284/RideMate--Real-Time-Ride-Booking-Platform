@@ -222,7 +222,7 @@ const Home = () => {
                 <div className="space-y-12">
                     <div>
                         <div className="w-14 h-14 bg-[#eeeeee] rounded-lg flex items-center justify-center font-bold mb-5">
-                           <img src="/Home/protection.svg" alt="" />
+                            <img src="/Home/protection.svg" alt="" />
                         </div>
                         <h3 className="text-lg font-bold mb-4">Protection on every trip</h3>
                         <p className="leading-7">
@@ -297,9 +297,11 @@ const Home = () => {
 
             {/* Bottom Button */}
             < div className="fixed bottom-0 left-0 right-0 bg-white px-4 py-3 z-50" >
-                <button className="w-full bg-black text-white py-4 rounded-lg font-semibold active:scale-95 transition">
-                    Sign up to drive
-                </button>
+                <Link to={"/register"}>
+                    <button className="w-full bg-black text-white py-4 rounded-lg font-semibold active:scale-95 transition">
+                        Sign up to drive
+                    </button>
+                </Link>
             </div >
         </div >
     );

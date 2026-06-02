@@ -111,7 +111,7 @@ const rideSchema = new mongoose.Schema(
                 "completed",
                 "cancelled",
             ],
-            default: "draft",
+            default: "looking",
         },
 
         otp: {

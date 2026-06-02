@@ -23,12 +23,11 @@ export const registerCaptainController = async (req, res) => {
             password,
             phone,
             vehicle,
-            location
-        } = req.body || {};
+            location,
+        } = req.body;
 
-        const { firstname, lastname } = fullname || {};
-        const { color, plate, capacity, vehicleType } = vehicle || {};
-        const { coordinates } = location || {};
+        const { firstname, lastname } = fullname
+        const { color, plate, capacity, vehicleType, vehicleName } = vehicle
 
         if (
             !firstname ||
@@ -38,7 +37,8 @@ export const registerCaptainController = async (req, res) => {
             !color ||
             !plate ||
             !capacity ||
-            !vehicleType
+            !vehicleType ||
+            !vehicleName
         ) {
             return res.status(400).json({
                 message: "All fields are required"
@@ -53,6 +53,16 @@ export const registerCaptainController = async (req, res) => {
             });
         }
 
+        const existingPlate = await captainModel.findOne({
+            "vehicle.plate": plate.toUpperCase(),
+        });
+
+        if (existingPlate) {
+            return res.status(400).json({
+                message: "Vehicle plate already registered",
+            });
+        }
+
         const passwordHash = await hashPassword(password);
 
         const captain = await captainModel.create({
@@ -64,15 +74,12 @@ export const registerCaptainController = async (req, res) => {
             password: passwordHash,
             phone,
             vehicle: {
+                vehicleName,
                 color,
                 plate,
                 capacity,
                 vehicleType
             },
-            location: {
-                type: "Point",
-                coordinates: coordinates || [0, 0]
-            }
         });
 
         res.status(201).json({
@@ -82,9 +89,31 @@ export const registerCaptainController = async (req, res) => {
 
     }
     catch (error) {
-        console.error("Error registering captain:", error);
-        res.status(500).json({
-            message: "Internal server error",
+
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyValue)[0]
+
+            if (field === "email") {
+                return res.status(400).json({
+                    message: "Email already in use"
+                })
+            }
+
+            if (field === "phone") {
+                return res.status(400).json({
+                    message: "Phone number already in use"
+                })
+            }
+
+            if (field === "vehicle.plate") {
+                return res.status(400).json({
+                    message: "Vehicle plate already registered"
+                })
+            }
+        }
+
+        return res.status(500).json({
+            message: "Internal server error"
         })
     }
 }
@@ -101,10 +130,8 @@ export const loginCaptainController = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-
-    console.log("Login request body:", req.body); // Debug log
     try {
-        const { email, password } = req.body || {};
+        const { email, password } = req.body ;
 
         if (!email || !password) {
             return res.status(400).json({

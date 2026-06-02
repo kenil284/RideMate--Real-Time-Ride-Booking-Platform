@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 export const getLocationSuggestions = async (search) => {
     if (!search?.trim()) return [];
 
-    const response = await axios.get(`${API_URL}/api/ride/get-suggestions`, {
+    const response = await axios.get(`${API_URL}/api/location/get-suggestions`, {
         params: { search },
         withCredentials: true,
     })
@@ -14,7 +14,7 @@ export const getLocationSuggestions = async (search) => {
 };
 
 export const getCurrentLocationApi = async (lat, lng) => {
-    const response = await axios.get(`${API_URL}/api/ride/get-current-location`, {
+    const response = await axios.get(`${API_URL}/api/location/get-current-location`, {
         params: {
             lat,
             lng,

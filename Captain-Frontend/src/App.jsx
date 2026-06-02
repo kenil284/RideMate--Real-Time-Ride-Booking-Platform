@@ -3,10 +3,13 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './Features/Home'
 import CaptainLogin from './Features/auth/Pages/CaptainLogin'
 import CaptainRegister from './Features/auth/Pages/CaptainRegister'
-import Rides from './Features/Rides/Pages/Rides'
+import { Toaster } from "react-hot-toast";
+import CaptainHome from './Features/captain-ride/pages/CaptainHome'
 
 const App = () => {
   return (
+    <>
+    <Toaster position="top-center" />
     <Routes>
       <Route path="/" element={<Home/>} />
 
@@ -14,8 +17,10 @@ const App = () => {
 
       <Route path='/register' element={<CaptainRegister/>} />
 
-      <Route path='/ride' element={<Rides/>}/>
+      <Route path='/captain-home' element={<CaptainHome/>} />
+
     </Routes>
+    </>
   )
 }
 

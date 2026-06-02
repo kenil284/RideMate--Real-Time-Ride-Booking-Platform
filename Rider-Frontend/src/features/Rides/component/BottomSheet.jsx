@@ -53,11 +53,18 @@ const BottomSheet = ({ stage, children }) => {
         </div>
       )}
 
+      {stage === "loading" && (
+        <div className="h-full flex items-center justify-center">
+          <p className="text-sm font-semibold text-gray-500">
+            Checking active ride...
+          </p>
+        </div>
+      )}
+
       <div
         ref={contentRef}
-        className={`w-full max-w-[430px] mx-auto px-5 py-4 ${
-          stage === "search" ? "h-[70dvh]" : ""
-        }`}
+        className={`w-full max-w-[430px] mx-auto px-5 py-4 ${stage === "search" ? "h-[70dvh]" : ""
+          }`}
       >
         {children}
       </div>

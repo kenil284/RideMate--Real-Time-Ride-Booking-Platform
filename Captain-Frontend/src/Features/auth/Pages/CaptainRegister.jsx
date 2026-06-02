@@ -1,7 +1,56 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../Hooks/useAuth.js";
 
 const CaptainRegister = () => {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [phone, setPhone] = useState("");
+    const [vehicleColor, setVehicleColor] = useState("");
+    const [vehicleName, setVehicleName] = useState("");
+    const [vehiclePlate, setVehiclePlate] = useState("");
+    const [vehicleCapacity, setVehicleCapacity] = useState("");
+    const [vehicleType, setVehicleType] = useState("car");
+
+    const { handleRegister } = useAuth();
+
+    const history = useNavigate();
+
+    const handleSubmit = async (e) => {
+        try {
+            e.preventDefault();
+
+            const data = await handleRegister({
+                fullname: {
+                    firstname: firstName,
+                    lastname: lastName,
+                },
+                email,
+                password,
+                phone,
+                vehicle: {
+                    color: vehicleColor,
+                    vehicleName: vehicleName,
+                    plate: vehiclePlate,
+                    capacity: vehicleCapacity,
+                    vehicleType: vehicleType
+                }
+            });
+
+            if (!data) {
+                return
+            }
+
+            history("/login")
+
+        } catch (error) {
+
+        }
+
+    };
+
     return (
         <div className="min-h-screen flex flex-col font-sans">
             {/* Header */}
@@ -24,7 +73,7 @@ const CaptainRegister = () => {
                         Create your captain account and start earning with Uber.
                     </p>
 
-                    <form className="space-y-4">
+                    <form className="space-y-4" onSubmit={handleSubmit}>
                         {/* Name */}
                         <div className="grid grid-cols-2 gap-3">
                             <input
@@ -32,6 +81,8 @@ const CaptainRegister = () => {
                                 name="fullname[firstname]"
                                 placeholder="First name"
                                 className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
                             />
 
                             <input
@@ -39,6 +90,8 @@ const CaptainRegister = () => {
                                 name="fullname[lastname]"
                                 placeholder="Last name"
                                 className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
                             />
                         </div>
 
@@ -47,6 +100,8 @@ const CaptainRegister = () => {
                             name="email"
                             placeholder="Captain email"
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
 
                         <input
@@ -54,13 +109,22 @@ const CaptainRegister = () => {
                             name="password"
                             placeholder="Create password"
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
 
                         <input
                             type="text"
+                            inputMode="numeric"
                             name="phone"
                             placeholder="Phone number"
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={phone}
+                            maxLength={10}
+                            onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, "").slice(0, 10)
+                                setPhone(value)
+                            }}
                         />
 
                         {/* Vehicle Details */}
@@ -71,6 +135,17 @@ const CaptainRegister = () => {
                             name="vehicle[color]"
                             placeholder="Vehicle color"
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={vehicleColor}
+                            onChange={(e) => setVehicleColor(e.target.value)}
+                        />
+
+                        <input
+                            type="text"
+                            name="vehicle[vehicleName]"
+                            placeholder="Vehicle Name"
+                            className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={vehicleName}
+                            onChange={(e) => setVehicleName(e.target.value)}
                         />
 
                         <input
@@ -78,6 +153,8 @@ const CaptainRegister = () => {
                             name="vehicle[plate]"
                             placeholder="Vehicle plate number"
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 uppercase outline-none focus:ring-2 focus:ring-black"
+                            value={vehiclePlate}
+                            onChange={(e) => setVehiclePlate(e.target.value)}
                         />
 
                         <input
@@ -91,6 +168,8 @@ const CaptainRegister = () => {
                                 if (e.target.value < 1 && e.target.value !== "") e.target.value = 1;
                             }}
                             className="w-full h-[52px] bg-[#f3f3f3] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black"
+                            value={vehicleCapacity}
+                            onChange={(e) => setVehicleCapacity(e.target.value)}
                         />
 
                         <div>
@@ -102,6 +181,8 @@ const CaptainRegister = () => {
                                         type="radio"
                                         name="vehicle[vehicleType]"
                                         value="car"
+                                        checked={vehicleType === "car"}
+                                        onChange={(e) => setVehicleType(e.target.value)}
                                         className="peer hidden"
                                     />
                                     <div className="h-[52px] rounded-lg bg-[#f3f3f3] flex items-center justify-center font-semibold border-2 border-transparent peer-checked:border-black peer-checked:bg-black peer-checked:text-white transition-all active:scale-95">
@@ -114,6 +195,8 @@ const CaptainRegister = () => {
                                         type="radio"
                                         name="vehicle[vehicleType]"
                                         value="bike"
+                                        checked={vehicleType === "bike"}
+                                        onChange={(e) => setVehicleType(e.target.value)}
                                         className="peer hidden"
                                     />
                                     <div className="h-[52px] rounded-lg bg-[#f3f3f3] flex items-center justify-center font-semibold border-2 border-transparent peer-checked:border-black peer-checked:bg-black peer-checked:text-white transition-all active:scale-95">
@@ -126,6 +209,8 @@ const CaptainRegister = () => {
                                         type="radio"
                                         name="vehicle[vehicleType]"
                                         value="auto"
+                                        checked={vehicleType === "auto"}
+                                        onChange={(e) => setVehicleType(e.target.value)}
                                         className="peer hidden"
                                     />
                                     <div className="h-[52px] rounded-lg bg-[#f3f3f3] flex items-center justify-center font-semibold border-2 border-transparent peer-checked:border-black peer-checked:bg-black peer-checked:text-white transition-all active:scale-95">
