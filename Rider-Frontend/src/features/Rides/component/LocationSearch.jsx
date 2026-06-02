@@ -3,16 +3,21 @@ import React, { useEffect, useRef } from "react";
 const LocationSearch = ({
   activeField,
   value,
-  updateRideData,
+  updateLocationText,
   suggestions,
   onSelect,
   onClose,
+  getCurrentLocation,
+  isLocationLoading,
+  isSearching,
 }) => {
+
   const inputRef = useRef(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    inputRef?.current.focus()
+  }, [])
+
 
   return (
     <div className="h-full flex flex-col">
@@ -32,7 +37,7 @@ const LocationSearch = ({
         ref={inputRef}
         type="text"
         value={value}
-        onChange={(e) => updateRideData(activeField, e.target.value)}
+        onChange={(e) => updateLocationText(activeField, e.target.value)}
         placeholder={
           activeField === "pickup"
             ? "Add a pick-up location"
@@ -41,12 +46,53 @@ const LocationSearch = ({
         className="w-full h-[52px] shrink-0 bg-[#eeeeee] rounded-lg px-4 outline-none focus:ring-2 focus:ring-black mb-5"
       />
 
-      {/* only this part scrolls */}
+      {activeField === "pickup" && (
+        <button
+          type="button"
+          onClick={getCurrentLocation}
+          disabled={isLocationLoading}
+          className="flex gap-4 py-4 border-b border-[#eeeeee] cursor-pointer text-left active:scale-[0.98] transition disabled:opacity-60"
+        >
+          <div className="w-10 h-10 rounded-full bg-[#eeeeee] flex items-center justify-center shrink-0">
+            🎯
+          </div>
+
+          <div>
+            <h3 className="font-semibold">
+              {isLocationLoading ? "Fetching location..." : "Use current location"}
+            </h3>
+            <p className="text-sm text-gray-600">
+              Detect your pickup location
+            </p>
+          </div>
+        </button>
+      )}
+
+
+
       <div className="flex-1 overflow-y-auto pr-1">
-        {suggestions.length > 0 ? (
+        {isSearching ? (
+          <div className="space-y-3 mt-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="flex gap-4 py-4 border-b border-[#eeeeee] animate-pulse"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0"></div>
+
+                <div className="flex-1">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : value.trim().length < 2 ? (
+          <p className="text-gray-500 mt-5">Start typing to search location</p>
+        ) : suggestions.length > 0 ? (
           suggestions.map((item, index) => (
             <div
-              key={index}
+              key={item.placeId || index}
               onClick={() => onSelect(item)}
               className="flex gap-4 py-4 border-b border-[#eeeeee] cursor-pointer active:scale-[0.98] transition"
             >
@@ -56,7 +102,9 @@ const LocationSearch = ({
 
               <div>
                 <h3 className="font-semibold">{item.title}</h3>
-                <p className="text-sm text-gray-600">{item.address}</p>
+                <p className="text-sm text-gray-600">
+                  {item.fullAddress || item.address}
+                </p>
               </div>
             </div>
           ))

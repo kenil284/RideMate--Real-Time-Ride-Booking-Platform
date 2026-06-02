@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getRideEstimateController, getSuggestionsController } from "../controllers/ride.controller.js";
+import { getCurrentLocationController, getRideEstimateController, getSuggestionsController } from "../controllers/ride.controller.js";
 import { query } from "express-validator";
 import { authUser } from "../middlewares/auth.middleware.js";
 
@@ -26,5 +26,7 @@ rideRouter.get(
   ],
     getRideEstimateController
 )
+
+rideRouter.get("/get-current-location", authUser,getCurrentLocationController)
 
 export default rideRouter

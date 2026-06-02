@@ -9,98 +9,101 @@ import LookingForDriver from "../component/LookingForDriver";
 import WaitingForDriver from "../component/WaitingForDriver";
 import Map from "../component/Map";
 
+import useLocationSearch from "../Hooks/useLocationSearch";
+import useCurrentLocation from "../Hooks/useCurrentLocation";
+import useRideEstimates from "../Hooks/useRideEstimates";
+
 const Ride = () => {
     const [stage, setStage] = useState("location");
     const [activeField, setActiveField] = useState("pickup");
 
     const [rideData, setRideData] = useState({
-        pickup: "",
-        destination: "",
+        pickup: {
+            address: "",
+            lat: null,
+            lng: null,
+        },
+
+        destination: {
+            address: "",
+            lat: null,
+            lng: null,
+        },
+
+        distanceKm: 0,
+        durationMin: 0,
+
         vehicle: null,
         vehicleType: "",
-        fare: "",
+        fare: 0,
+
         driver: null,
-    });
+        status: "",
+    })
+
+    const { searchValue, suggestions, isSearching } = useLocationSearch({
+        stage,
+        activeField,
+        rideData,
+    })
+
+    const { getRideEstimates, isRideSearching, vehicleOptions } = useRideEstimates();
 
     const updateRideData = (key, value) => {
         setRideData((prev) => ({
             ...prev,
             [key]: value,
-        }));
-    };
+        }))
+    }
 
-    const allSuggestions = [
-        {
-            title: "Third Wave Coffee, HSR Layout",
-            address: "Surat, Gujarat, India",
-        },
-        {
-            title: "Phoenix Marketcity",
-            address: "Surat, Gujarat, India",
-        },
-        {
-            title: "Surat Railway Station",
-            address: "Station Road, Surat, Gujarat",
-        },
-        {
-            title: "Airport Road",
-            address: "Dumas Road, Surat, Gujarat",
-        },
-        {
-            title: "KSR Bengaluru City Junction",
-            address: "Bengaluru, Karnataka, India",
-        },
-        {
-            title: "Third Wave Coffee, HSR Layout",
-            address: "Surat, Gujarat, India",
-        },
-        {
-            title: "Phoenix Marketcity",
-            address: "Surat, Gujarat, India",
-        },
-        {
-            title: "Surat Railway Station",
-            address: "Station Road, Surat, Gujarat",
-        },
-        {
-            title: "Airport Road",
-            address: "Dumas Road, Surat, Gujarat",
-        },
-        {
-            title: "KSR Bengaluru City Junction",
-            address: "Bengaluru, Karnataka, India",
-        },
-    ];
+    const { getCurrentLocation, isLocationLoading } = useCurrentLocation(setRideData, setStage);
 
-    const searchValue = rideData[activeField];
-
-    const filteredSuggestions = allSuggestions.filter((item) =>
-        item.title.toLowerCase().includes(searchValue.toLowerCase())
-    );
+    const updateLocationText = (field, value) => {
+        setRideData((prev) => ({
+            ...prev,
+            [field]: {
+                address: value,
+                lat: null,
+                lng: null,
+            }
+        }))
+    }
 
     const selectLocation = (location) => {
-        updateRideData(activeField, location.title);
-        setStage("location");
-    };
+        setRideData((prev) => ({
+            ...prev,
+            [activeField]: {
+                address: location.fullAddress || location.address || location.title,
+                lat: location.lat,
+                lng: location.lng,
+            },
+        }))
 
+        setStage("location")
+    }
 
-    const findTrip = () => {
-        updateRideData("fare", "₹193");
-        setStage("vehicle");
-    };
+    const findTrip = async () => {
+        const options = await getRideEstimates(
+            rideData.pickup,
+            rideData.destination
+        );
+
+        if (options.length > 0) {
+            setStage("vehicle")
+        }
+    }
 
     const selectVehicle = (vehicle) => {
         updateRideData("vehicle", vehicle);
         updateRideData("vehicleType", vehicle.type);
         updateRideData("fare", vehicle.price);
 
-        setStage("confirm");
-    };
+        setStage("confirm")
+    }
 
     const confirmRide = () => {
         setStage("looking");
 
-        // temporary testing
         setTimeout(() => {
             updateRideData("driver", {
                 name: "Rahul",
@@ -109,17 +112,16 @@ const Ride = () => {
             });
 
             setStage("waiting");
-        }, 20000);
-    };
+        }, 20000)
+    }
+
 
     return (
         <div className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-white">
-            {/* Map Layer */}
             <div className="absolute inset-0 z-0 bg-[#e5e5e5]">
                 <Map />
             </div>
 
-            {/* Transparent Header */}
             <div className="fixed top-0 left-0 right-0 z-[9999] px-5 py-4">
                 <div className="flex items-center justify-between">
                     <h1 className="text-3xl font-bold text-black">Uber</h1>
@@ -130,26 +132,30 @@ const Ride = () => {
                 </div>
             </div>
 
-            {/* Bottom Sheet Layer */}
             <BottomSheet stage={stage}>
                 {stage === "location" && (
                     <LocationForm
                         rideData={rideData}
-                        updateRideData={updateRideData}
+                        updateLocationText={updateLocationText}
                         setStage={setStage}
                         setActiveField={setActiveField}
                         findTrip={findTrip}
+                        isRideSearching={isRideSearching}
                     />
                 )}
 
                 {stage === "search" && (
                     <LocationSearch
                         activeField={activeField}
-                        value={rideData[activeField]}
-                        updateRideData={updateRideData}
-                        suggestions={filteredSuggestions}
+                        value={searchValue}
+                        updateLocationText={updateLocationText}
+                        suggestions={suggestions}
+                        isSearching={isSearching}
                         onSelect={selectLocation}
                         onClose={() => setStage("location")}
+                        getCurrentLocation={getCurrentLocation}
+                        isLocationLoading={isLocationLoading}
+
                     />
                 )}
 
@@ -157,6 +163,7 @@ const Ride = () => {
                     <VehicleOptions
                         onSelectVehicle={selectVehicle}
                         onEdit={() => setStage("location")}
+                        vehicleOptions={vehicleOptions}
                     />
                 )}
 
@@ -168,9 +175,13 @@ const Ride = () => {
                     />
                 )}
 
-                {stage === "looking" && <LookingForDriver rideData={rideData} />}
+                {stage === "looking" && (
+                    <LookingForDriver rideData={rideData} />
+                )}
 
-                {stage === "waiting" && <WaitingForDriver rideData={rideData} />}
+                {stage === "waiting" && (
+                    <WaitingForDriver rideData={rideData} />
+                )}
             </BottomSheet>
         </div>
     );

@@ -127,7 +127,7 @@ export const getSuggestionsService = async (input) => {
 };
 
 export const getDistanceTimeService = async ({pickupLat,pickupLng,destinationLat,destinationLng,mode = "drive"}) => {
-    
+
     if (!pickupLat || !pickupLng || !destinationLat || !destinationLng) {
         throw new Error("Pickup and destination coordinates are required");
     }
@@ -167,3 +167,54 @@ export const getDistanceTimeService = async ({pickupLat,pickupLng,destinationLat
 };
 
 
+export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
+    const response = await axios.get(
+        "https://api.geoapify.com/v1/geocode/reverse",
+        {
+            params: {
+                lat,
+                lon: lng,
+                apiKey: process.env.GEOAPIFY_API_KEY,
+            },
+        }
+    );
+
+    const item = response.data.features[0];
+
+    if (!item) {
+        return {
+            title: "Current Location",
+            address: "",
+            fullAddress: "Current Location",
+            lat,
+            lng,
+        };
+    }
+
+    const props = item.properties;
+
+    return {
+        title:
+            props.address_line1 ||
+            props.name ||
+            props.street ||
+            props.city ||
+            "Current Location",
+
+        address:
+            props.address_line2 ||
+            props.formatted ||
+            "",
+
+        fullAddress: props.formatted || "Current Location",
+
+        lat,
+        lng,
+
+        city: props.city || "",
+        state: props.state || "",
+        postcode: props.postcode || "",
+        country: props.country || "",
+        placeId: props.place_id || "",
+    };
+};
