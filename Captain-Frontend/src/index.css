@@ -12,3 +12,29 @@ body,
   min-height: 100%;
   background-color: #eeeeee;
 }
+
+.search-pulse {
+  animation: searchPulse 1.8s ease-out infinite;
+}
+
+.delay-200 {
+  animation-delay: 0.4s;
+}
+
+@keyframes searchPulse {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.6;
+  }
+
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+

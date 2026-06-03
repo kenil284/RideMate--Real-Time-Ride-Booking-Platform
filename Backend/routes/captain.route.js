@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { getCaptainProfileController, loginCaptainController, logoutCaptainController, registerCaptainController } from "../controllers/captain.controller.js";
-import { authUser } from "../middlewares/auth.middleware.js";
+import { getCaptainProfileController, getCaptainTodayDashboardController, loginCaptainController, logoutCaptainController, registerCaptainController,updateCaptainAvalabilityController } from "../controllers/captain.controller.js";
+import { authCaptain, authUser } from "../middlewares/auth.middleware.js";
 
 import { body } from "express-validator";
 
@@ -68,6 +68,7 @@ captainRouter.post("/register", registerCaptainValidation, registerCaptainContro
  * @description Login an existing captain
  * @access Public
  */
+
 captainRouter.post("/login", loginCaptainValidation, loginCaptainController);
 
 /**
@@ -75,13 +76,29 @@ captainRouter.post("/login", loginCaptainValidation, loginCaptainController);
  * @description Get captain profile
  * @access Private
  */
-captainRouter.get("/profile", authUser, getCaptainProfileController);
+captainRouter.get("/profile", authCaptain, getCaptainProfileController);
 
 /**
  * @route POST /api/captain/logout
  * @description Logout a captain
  * @access Private
  */
-captainRouter.post("/logout", authUser, logoutCaptainController);
+captainRouter.post("/logout", authCaptain, logoutCaptainController);
+
+/**
+ * @route GET /api/captain/get-today-dashboard
+ * @description Get Current Day Captain Dashboard
+ * @access Private
+ */
+
+captainRouter.get("/get-today-dashboard",authCaptain,getCaptainTodayDashboardController)
+
+/**
+ * @route PUT /api/captain/update-captain-availability
+ * @description Get Current Day Captain Dashboard
+ * @access Private
+ */
+
+captainRouter.put("/update-captain-availability",authCaptain,updateCaptainAvalabilityController)
 
 export default captainRouter;

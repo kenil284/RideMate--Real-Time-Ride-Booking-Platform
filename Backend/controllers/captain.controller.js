@@ -2,6 +2,7 @@ import { validationResult } from "express-validator";
 import captainModel from "../models/captian.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js";
 import { hashPassword, verifyPassword } from "../utils/password.util.js";
+import { getCaptainTodayDashboard } from "../services/captain.service.js";
 
 /**
  * @name registerCaptainController
@@ -131,7 +132,7 @@ export const loginCaptainController = async (req, res) => {
     }
 
     try {
-        const { email, password } = req.body ;
+        const { email, password } = req.body;
 
         if (!email || !password) {
             return res.status(400).json({
@@ -147,11 +148,9 @@ export const loginCaptainController = async (req, res) => {
             })
         }
 
-        console.log("Captain found:", captain); // Debug log
-
         const isPasswordValid = await verifyPassword(password, captain.password);
 
-        console.log("Password validation result:", isPasswordValid); // Debug log
+        console.log("Password validation result:", isPasswordValid);
 
         if (!isPasswordValid) {
             return res.status(400).json({
@@ -232,5 +231,68 @@ export const logoutCaptainController = async (req, res) => {
         res.status(500).json({
             message: "Internal server error",
         })
+    }
+}
+
+/**
+ * @name getCaptainTodayDashboardController
+ * @description Captain Today "Ride And Earning Data"
+ * @access Private
+ */
+export const getCaptainTodayDashboardController = async (req, res) => {
+    try {
+        const captainId = req.captainId;
+
+        const dashboard = await getCaptainTodayDashboard(captainId);
+
+        return res.status(200).json({
+            message: "Captain dashboard fetched successfully",
+            dashboard,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+};
+
+/**
+ * @name getCaptainTodayDashboardController
+ * @description Updating Captain Availability online or offline by boolean value
+ * @access Private
+ */
+
+export const updateCaptainAvalabilityController = async (req, res) => {
+    try {
+        const { isAvailable } = req.body
+
+        if (typeof isAvailable !== "boolean") {
+            return res.status(400).json({
+                message: "isAvailable must be true or false"
+            });
+        }
+
+        const updatedCaptain = await captainModel.findByIdAndUpdate(
+            req.captainId,
+            {
+                $set: {
+                    isAvailable: isAvailable
+                }
+            },
+            {
+                new: true,
+            }
+        );
+
+
+        return res.status(200).json({
+            message: updatedCaptain.isAvailable? "Captain is online" : "Captain is offline",
+            isAvailable: updatedCaptain.isAvailable
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+        });
     }
 }
