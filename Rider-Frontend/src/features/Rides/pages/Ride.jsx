@@ -15,6 +15,7 @@ import useRideEstimates from "../Hooks/useRideEstimates";
 import useCreateRide from "../Hooks/useCreateRide";
 import useActiveRide from "../Hooks/useActiveRide";
 import Map2 from "../component/Map2";
+import { useRiderSocket } from "../Hooks/useRiderSocket";
 
 const Ride = () => {
     const [stage, setStage] = useState("loading");
@@ -65,6 +66,8 @@ const Ride = () => {
     const { createRide, isRideCreating } = useCreateRide()
 
     const { getActiveRide, isActiveRideLoading } = useActiveRide();
+
+    useRiderSocket()
 
 
     useEffect(() => {
@@ -187,6 +190,8 @@ const Ride = () => {
 
         setStage("looking");
     };
+
+
 
 
     return (

@@ -4,14 +4,22 @@ import CaptainHeader from "../component/CaptainHeader";
 import LookingForRide from "../component/LookingForRide";
 import Map from "../component/Map";
 import { useCaptainDashboard } from "../hooks/useCaptainDashboard";
+import { useCaptainSocket } from "../hooks/useCaptainSocket";
+
 
 
 const CaptainHome = () => {
+
     const { dashboard } = useCaptainDashboard();
 
     const [isOnline, setIsOnline] = useState(false);
 
     const [stage, setStage] = useState("looking");
+
+    const { socketstate } = useCaptainSocket();
+
+    console.log(socketstate);
+
 
 
     return (

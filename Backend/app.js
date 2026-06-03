@@ -21,3 +21,4 @@ app.use("/api/user", userRouter);
 app.use("/api/captain",captainRouter)
 app.use("/api/location",locationRouter)
 app.use("/api/ride",rideRouter)
+

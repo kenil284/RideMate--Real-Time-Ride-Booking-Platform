@@ -104,12 +104,12 @@ export const loginuserController = async (req, res) => {
     user: user._id,
   });
 
-  res.cookie("accessToken", accessToken, {
+  res.cookie("userAccessToken", accessToken, {
     ...cookieOptions,
     maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000,
   });
 
-  res.cookie("refreshToken", refreshToken, {
+  res.cookie("userRefreshToken", refreshToken, {
     ...cookieOptions,
     maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000,
   });

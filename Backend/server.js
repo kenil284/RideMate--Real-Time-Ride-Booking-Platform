@@ -10,9 +10,9 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 3000;
 
-initSocket(server);
-
   await connectDB();
+
+  initSocket(server);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

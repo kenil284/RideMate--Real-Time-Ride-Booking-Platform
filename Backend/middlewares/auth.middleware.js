@@ -4,7 +4,7 @@ import userModel from "../models/user.model.js";
 import { verifyAccessToken } from "../utils/jwt.util.js";
 
 export const authUser = async (req, res, next) => {
-    const token = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.userAccessToken || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
         return res.status(400).json({
@@ -45,7 +45,7 @@ export const authUser = async (req, res, next) => {
 
 
 export const authCaptain = async (req, res, next) => {
-    const token = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
+    const token = req.cookies.captainAccessToken || req.headers.authorization?.split(" ")[1];
 
     if (!token) {
         return res.status(400).json({

@@ -161,12 +161,12 @@ export const loginCaptainController = async (req, res) => {
         const accessToken = generateAccessToken(captain._id);
         const refreshToken = generateRefreshToken(captain._id);
 
-        res.cookie("accessToken", accessToken, {
+        res.cookie("captainAccessToken", accessToken, {
             httpOnly: true,
             maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000
         });
 
-        res.cookie("refreshToken", refreshToken, {
+        res.cookie("captainRefreshToken", refreshToken, {
             httpOnly: true,
             maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
         });
