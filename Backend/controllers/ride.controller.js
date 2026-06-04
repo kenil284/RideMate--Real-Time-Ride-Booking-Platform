@@ -1,5 +1,8 @@
 import { validationResult } from "express-validator";
 import rideModel from "../Models/ride.model.js";
+import { findNearbyCaptainsForRide } from "../services/captain.service.js";
+import { sendRideRequestToCaptains } from "../socket/socket.emit.js";
+
 
 export const createRideController = async (req, res) => {
     try {
@@ -61,12 +64,19 @@ export const createRideController = async (req, res) => {
             status: "looking",
         });
 
+        const nearbyCaptains = await findNearbyCaptainsForRide(ride);
+
+        // console.log(nearbyCaptains)
+
+        sendRideRequestToCaptains(nearbyCaptains, ride);
+
         return res.status(200).json({
             message: "Ride created successfully",
             ride,
         });
 
     } catch (error) {
+        console.log(error)
         return res.status(500).json({
             message: "Failed to create ride",
         });

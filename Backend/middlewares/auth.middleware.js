@@ -56,6 +56,8 @@ export const authCaptain = async (req, res, next) => {
     try {
         const decoded = verifyAccessToken(token)
 
+        
+
         const captain = await captainModel.findById(decoded.userId)
 
         if (!captain) {

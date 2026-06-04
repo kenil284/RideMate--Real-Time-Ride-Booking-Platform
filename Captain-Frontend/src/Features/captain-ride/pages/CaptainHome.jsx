@@ -5,20 +5,46 @@ import LookingForRide from "../component/LookingForRide";
 import Map from "../component/Map";
 import { useCaptainDashboard } from "../hooks/useCaptainDashboard";
 import { useCaptainSocket } from "../hooks/useCaptainSocket";
-
+import { useCaptainAvailability } from "../hooks/useCaptainAvailability";
+import { useCaptainLocation } from "../hooks/useCaptainLocation";
+import RideRequest from "../component/RideRequest";
+import { useContext } from "react";
+import { captainContext } from "../../../Context/CaptainContext";
+;
 
 
 const CaptainHome = () => {
 
-    const { dashboard } = useCaptainDashboard();
+    const { captainData } = useContext(captainContext);
 
-    const [isOnline, setIsOnline] = useState(false);
+    const [requests, setRequests] = useState([]);
 
     const [stage, setStage] = useState("looking");
 
-    const { socketstate } = useCaptainSocket();
+    const { socketstate } = useCaptainSocket({ setRequests, setStage });
 
-    console.log(socketstate);
+    const { isOnline, isUpdating, toggleAvailability } = useCaptainAvailability();
+
+    const { dashboard, isDashboardLoading } = useCaptainDashboard();
+
+    const { lastLocation } = useCaptainLocation({ isOnline });
+
+    const handleAcceptRide = (ride) => {
+        console.log("Accepted ride:", ride);
+
+        // later call accept ride API here
+        setStage("accepted");
+    };
+
+    const handleCancelRide = (ride) => {
+        setRequests((prev) =>
+            prev.filter((item) => item._id !== ride._id)
+        );
+
+        if (requests.length <= 1) {
+            setStage("looking");
+        }
+    };
 
 
 
@@ -29,15 +55,31 @@ const CaptainHome = () => {
             </div>
 
             <CaptainHeader
+                username={captainData?.fullname?.firstname || "Captain"}
                 isOnline={isOnline}
-                onToggle={() => setIsOnline((prev) => !prev)}
+                isUpdating={isUpdating}
+                onToggle={toggleAvailability}
             />
-            <BottomSheet stage={stage} contentKey={isOnline}>
+
+            <BottomSheet
+                stage={stage}
+                contentKey={`${stage}-${isOnline}-${requests.length}`}
+            >
                 {stage === "looking" && (
                     <LookingForRide
                         dashboard={dashboard}
                         isOnline={isOnline}
                     />
+                )}
+
+                {stage === "requests" && (
+                    <RideRequest
+                        ride={requests[0]}
+                        onAccept={handleAcceptRide}
+                        onCancel={handleCancelRide}
+                    />
+
+
                 )}
             </BottomSheet>
         </div>

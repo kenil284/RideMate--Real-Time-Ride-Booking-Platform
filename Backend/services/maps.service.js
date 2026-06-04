@@ -67,66 +67,133 @@ import axios from "axios"
 //     }
 // };
 
+// for geoapify
+// export const getSuggestionsService = async (input) => {
+//     if (!input || input.trim().length < 3) {
+//         return [];
+//     }
 
+//     const cleanInput = input.replace(/"/g, "").trim();
+
+//     const response = await axios.get(
+//         "https://api.geoapify.com/v1/geocode/autocomplete",
+//         {
+//             params: {
+//                 text: cleanInput,
+//                 apiKey: process.env.GEOAPIFY_API_KEY,
+//                 limit: 8,
+
+//                 // restrict to India
+//                 filter: "countrycode:in",
+
+//                 // prefer Surat results
+//                 bias: "proximity:72.8311,21.1702",
+//             },
+//         }
+//     );
+
+
+//     const suggestions = response.data.features.map((item) => {
+//         const props = item.properties;
+//         const [lng, lat] = item.geometry.coordinates;
+
+//         return {
+//             title:
+//                 props.address_line1 ||
+//                 props.name ||
+//                 props.street ||
+//                 props.city ||
+//                 "Unknown location",
+
+//             address:
+//                 props.address_line2 ||
+//                 props.formatted ||
+//                 "",
+
+//             fullAddress: props.formatted || "",
+
+//             lat,
+//             lng,
+
+//             city: props.city || "",
+//             state: props.state || "",
+//             postcode: props.postcode || "",
+//             country: props.country || "",
+//             placeId: props.place_id || "",
+//         };
+//     });
+
+//     return suggestions;
+// };
+
+// for tomtom
 export const getSuggestionsService = async (input) => {
     if (!input || input.trim().length < 3) {
         return [];
     }
 
     const cleanInput = input.replace(/"/g, "").trim();
+    try {
+        const response = await axios.get(
+            `https://api.tomtom.com/search/2/search/${encodeURIComponent(cleanInput)}.json`,
+            {
+                params: {
+                    key: process.env.TOMTOM_API_KEY,
+                    limit: 8,
+                    typeahead: true,
+                    countrySet: "IN",
+                    idxSet: "POI,PAD,Addr,Str,Geo",
 
-    const response = await axios.get(
-        "https://api.geoapify.com/v1/geocode/autocomplete",
-        {
-            params: {
-                text: cleanInput,
-                apiKey: process.env.GEOAPIFY_API_KEY,
-                limit: 8,
+                    // bias only, not restriction
+                    lat: 21.1702,
+                    lon: 72.8311,
+                }
+            }
+        );
 
-                // restrict to India
-                filter: "countrycode:in",
+        const suggestions = response.data.results.map((item) => {
+            const address = item.address || {};
+            const poi = item.poi || {};
+            const position = item.position || {};
 
-                // prefer Surat results
-                bias: "proximity:72.8311,21.1702",
-            },
-        }
-    );
+            return {
+                title:
+                    poi.name ||
+                    address.freeformAddress ||
+                    address.streetName ||
+                    address.municipality ||
+                    "Unknown location",
+
+                address:
+                    address.freeformAddress ||
+                    [
+                        address.municipality,
+                        address.countrySubdivision,
+                        address.country,
+                    ].filter(Boolean).join(", "),
+
+                fullAddress: address.freeformAddress || "",
+
+                lat: position.lat,
+                lng: position.lon,
+
+                city: address.municipality || "",
+                state: address.countrySubdivision || "",
+                postcode: address.postalCode || "",
+                country: address.country || "",
+                placeId: item.id || "",
+            };
+        });
+
+        return suggestions;
+    } catch (error) {
+        console.log(error)
+    }
 
 
-    const suggestions = response.data.features.map((item) => {
-        const props = item.properties;
-        const [lng, lat] = item.geometry.coordinates;
-
-        return {
-            title:
-                props.address_line1 ||
-                props.name ||
-                props.street ||
-                props.city ||
-                "Unknown location",
-
-            address:
-                props.address_line2 ||
-                props.formatted ||
-                "",
-
-            fullAddress: props.formatted || "",
-
-            lat,
-            lng,
-
-            city: props.city || "",
-            state: props.state || "",
-            postcode: props.postcode || "",
-            country: props.country || "",
-            placeId: props.place_id || "",
-        };
-    });
-
-    return suggestions;
 };
 
-export const getDistanceTimeService = async ({pickupLat,pickupLng,destinationLat,destinationLng,mode = "drive"}) => {
+export const getDistanceTimeService = async ({ pickupLat, pickupLng, destinationLat, destinationLng, mode = "drive" }) => {
 
     if (!pickupLat || !pickupLng || !destinationLat || !destinationLng) {
         throw new Error("Pickup and destination coordinates are required");
@@ -166,20 +233,78 @@ export const getDistanceTimeService = async ({pickupLat,pickupLng,destinationLat
     };
 };
 
+// for geoapify
+// export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
+//     const response = await axios.get(
+//         "https://api.geoapify.com/v1/geocode/reverse",
+//         {
+//             params: {
+//                 lat,
+//                 lon: lng,
+//                 apiKey: process.env.GEOAPIFY_API_KEY,
+//             },
+//         }
+//     );
 
+//     const item = response.data.features[0];
+
+//     if (!item) {
+//         return {
+//             title: "Current Location",
+//             address: "",
+//             fullAddress: "Current Location",
+//             lat,
+//             lng,
+//         };
+//     }
+
+//     const props = item.properties;
+
+//     return {
+//         title:
+//             props.address_line1 ||
+//             props.name ||
+//             props.street ||
+//             props.city ||
+//             "Current Location",
+
+//         address:
+//             props.address_line2 ||
+//             props.formatted ||
+//             "",
+
+//         fullAddress: props.formatted || "Current Location",
+
+//         lat,
+//         lng,
+
+//         city: props.city || "",
+//         state: props.state || "",
+//         postcode: props.postcode || "",
+//         country: props.country || "",
+//         placeId: props.place_id || "",
+//     };
+// };
+
+// for tomtom
 export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
+    if (!lat || !lng) {
+        throw new Error("Latitude and longitude are required");
+    }
+
     const response = await axios.get(
-        "https://api.geoapify.com/v1/geocode/reverse",
+        `https://api.tomtom.com/search/2/reverseGeocode/${lat},${lng}.json`,
         {
             params: {
-                lat,
-                lon: lng,
-                apiKey: process.env.GEOAPIFY_API_KEY,
+                key: process.env.TOMTOM_API_KEY,
+                radius: 100,
+                returnMatchType: true,
+                view: "IN",
             },
         }
     );
 
-    const item = response.data.features[0];
+    const item = response.data.addresses?.[0];
 
     if (!item) {
         return {
@@ -188,33 +313,43 @@ export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
             fullAddress: "Current Location",
             lat,
             lng,
+
+            city: "",
+            state: "",
+            postcode: "",
+            country: "",
+            placeId: "",
         };
     }
 
-    const props = item.properties;
+    const addressData = item.address || {};
 
     return {
         title:
-            props.address_line1 ||
-            props.name ||
-            props.street ||
-            props.city ||
+            addressData.freeformAddress ||
+            addressData.streetNameAndNumber ||
+            addressData.streetName ||
+            addressData.municipality ||
             "Current Location",
 
         address:
-            props.address_line2 ||
-            props.formatted ||
-            "",
+            addressData.freeformAddress ||
+            [
+                addressData.streetName,
+                addressData.municipality,
+                addressData.countrySubdivision,
+                addressData.country,
+            ].filter(Boolean).join(", "),
 
-        fullAddress: props.formatted || "Current Location",
+        fullAddress: addressData.freeformAddress || "Current Location",
 
         lat,
         lng,
 
-        city: props.city || "",
-        state: props.state || "",
-        postcode: props.postcode || "",
-        country: props.country || "",
-        placeId: props.place_id || "",
+        city: addressData.municipality || "",
+        state: addressData.countrySubdivision || "",
+        postcode: addressData.postalCode || "",
+        country: addressData.country || "",
+        placeId: item.id || "",
     };
 };

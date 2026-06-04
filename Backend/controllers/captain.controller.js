@@ -193,18 +193,10 @@ export const loginCaptainController = async (req, res) => {
  */
 export const getCaptainProfileController = async (req, res) => {
     try {
-        const captainId = req.userId;
-        const captain = await captainModel.findById(captainId)
-
-        if (!captain) {
-            return res.status(404).json({
-                message: "Captain not found"
-            });
-        }
 
         res.status(200).json({
             message: "Captain profile retrieved successfully",
-            captain,
+            captain: req.captain,
         });
     } catch (error) {
         res.status(500).json({
@@ -286,7 +278,7 @@ export const updateCaptainAvalabilityController = async (req, res) => {
 
 
         return res.status(200).json({
-            message: updatedCaptain.isAvailable? "Captain is online" : "Captain is offline",
+            message: updatedCaptain.isAvailable ? "Captain is online" : "Captain is offline",
             isAvailable: updatedCaptain.isAvailable
         });
 
@@ -296,3 +288,43 @@ export const updateCaptainAvalabilityController = async (req, res) => {
         });
     }
 }
+
+/**
+ * @name updateCaptainLocationController
+ * @description Updating Captain Location Frequently
+ * @access Private
+ */
+
+export const updateCaptainLocationController = async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+
+        const latitude = Number(lat);
+        const longitude = Number(lng);
+
+
+        await captainModel.updateOne(
+            { _id: req.captainId },
+            {
+                $set: {
+                    location: {
+                        type: "Point",
+                        coordinates: [longitude, latitude],
+                    },
+                },
+            })
+
+        return res.status(200).json({
+            message: "Captain location updated successfully",
+            location: {
+                type: "Point",
+                coordinates: [longitude, latitude],
+            },
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Internal server error",
+        })
+    }
+};

@@ -1,27 +1,32 @@
 import { useEffect, useState } from "react";
-import { connectSocket, disconnectSocket } from "../../../services/socket.service";
+import { connectSocket } from "../../../services/socket.service";
+import { playRideRequestSound } from "../services/notificationSound.service";
 
+export const useCaptainSocket = ({ setRequests, setStage }) => {
+  const [socketstate, setSocketstate] = useState(null);
 
-export const useCaptainSocket = () => {
-
-  const [socketstate,setSocketstate] = useState(null)
-  
   useEffect(() => {
     const socket = connectSocket();
 
     socket.on("connect", () => {
-      setSocketstate(socketstate)
+      console.log("Captain socket connected:", socket.id);
+      setSocketstate(socket);
     });
 
     socket.on("disconnect", () => {
-      console.log("disconnected");
-      setSocketstate(null)
+      console.log("Captain socket disconnected");
+      setSocketstate(null);
     });
 
-    return () => {
-      disconnectSocket();
-    };
+    socket.on("new-ride-request", ({ ride }) => {
+      console.log("New ride request received:", ride);
+
+      playRideRequestSound();
+
+      setRequests((prev) => [...prev, ride]);
+      setStage("requests");
+    });
   }, []);
 
-  return {socketstate}
+  return { socketstate };
 };

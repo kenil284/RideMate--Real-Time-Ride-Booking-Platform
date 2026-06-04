@@ -19,11 +19,10 @@ const BottomSheet = ({ stage, contentKey, children }) => {
 
     const currentHeight = sheet.offsetHeight;
 
+
     const targetHeight =
       stage === "navigating"
         ? Math.max(window.innerHeight * 0.1, 86)
-        : stage === "requests"
-        ? window.innerHeight * 0.65
         : content.scrollHeight;
 
     if (isFirstRender.current) {
@@ -44,24 +43,23 @@ const BottomSheet = ({ stage, contentKey, children }) => {
   }, [stage, contentKey]);
 
   return (
-  <div
-    ref={sheetRef}
-    className="fixed bottom-0 left-0 right-0 z-[9999] bg-white overflow-hidden shadow-2xl rounded-t-[34px]"
-  >
     <div
-      ref={contentRef}
-      className={`
+      ref={sheetRef}
+      className="fixed bottom-0 left-0 right-0 z-[9999] bg-white overflow-hidden shadow-2xl rounded-t-[34px]"
+    >
+      <div
+        ref={contentRef}
+        className={`
         w-full max-w-[430px] mx-auto px-5 py-4
-        ${stage === "requests" ? "h-[65dvh] overflow-y-auto" : ""}
         ${stage === "navigating" ? "h-full py-3" : ""}
       `}
-    >
-      <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300 mb-5" />
+      >
+        <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300 mb-5" />
 
-      {children}
+        {children}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default BottomSheet;

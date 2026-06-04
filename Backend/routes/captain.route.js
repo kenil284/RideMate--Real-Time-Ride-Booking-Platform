@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCaptainProfileController, getCaptainTodayDashboardController, loginCaptainController, logoutCaptainController, registerCaptainController,updateCaptainAvalabilityController } from "../controllers/captain.controller.js";
+import { getCaptainProfileController, getCaptainTodayDashboardController, loginCaptainController, logoutCaptainController, registerCaptainController,updateCaptainAvalabilityController, updateCaptainLocationController } from "../controllers/captain.controller.js";
 import { authCaptain, authUser } from "../middlewares/auth.middleware.js";
 
 import { body } from "express-validator";
@@ -95,10 +95,20 @@ captainRouter.get("/get-today-dashboard",authCaptain,getCaptainTodayDashboardCon
 
 /**
  * @route PUT /api/captain/update-captain-availability
- * @description Get Current Day Captain Dashboard
+ * @description update captain availability
  * @access Private
  */
 
 captainRouter.put("/update-captain-availability",authCaptain,updateCaptainAvalabilityController)
+
+/**
+ * @route PUT /api/captain/update-location
+ * @description update captain location frequently 
+ * @access Private
+ */
+
+captainRouter.put("/update-location",authCaptain,updateCaptainLocationController)
+
+
 
 export default captainRouter;
