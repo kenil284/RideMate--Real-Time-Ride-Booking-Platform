@@ -12,14 +12,14 @@ const WaitingForDriver = ({ rideData }) => {
   const captainName = `${captain?.fullname?.firstname || ""} ${captain?.fullname?.lastname || ""}`.trim()
 
   const formatAcceptedTime = (date) => {
-  if (!date) return ""
+    if (!date) return ""
 
-  return new Date(date).toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  })
-}
+    return new Date(date).toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
 
   return (
     <div className="pb-3">
@@ -29,7 +29,7 @@ const WaitingForDriver = ({ rideData }) => {
           Captain assigned
         </div>
 
-        <h2 className="text-[24px] font-semibold text-gray-900 leading-tight">
+        <h2 className="text-[22px] font-semibold text-gray-900 leading-tight">
           Meet at the pickup point
         </h2>
 
@@ -91,84 +91,25 @@ const WaitingForDriver = ({ rideData }) => {
         </div>
       </div>
 
-      <div className="rounded-[28px] bg-white border border-gray-100 shadow-[0_8px_24px_rgba(0,0,0,0.05)] p-5 mb-4">
-        <h3 className="text-base font-semibold text-gray-900 mb-4">
-          Trip route
-        </h3>
 
-        <div className="relative pl-8">
-          <div className="absolute left-[7px] top-5 bottom-6 w-[2px] bg-gray-200" />
 
-          <div className="relative mb-6">
-            <span className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-gray-800 ring-4 ring-gray-100" />
 
-            <p className="text-[11px] font-semibold text-gray-400 uppercase">
-              Pickup
-            </p>
+      <div className="w-full grid grid-cols-2 gap-3">
+        <a
+          href={captain?.phone ? `tel:${captain.phone}` : undefined}
+          className="h-14 rounded-2xl bg-gray-900 text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
+        >
+          <FaPhone className="text-sm" />
+          Call Captain
+        </a>
 
-            <h4 className="text-sm font-medium text-gray-800 leading-snug mt-1">
-              {rideData?.pickup?.address || "Pickup address"}
-            </h4>
-          </div>
-
-          <div className="relative">
-            <span className="absolute -left-8 top-1 w-4 h-4 rounded-md bg-gray-800 ring-4 ring-gray-100" />
-
-            <p className="text-[11px] font-semibold text-gray-400 uppercase">
-              Destination
-            </p>
-
-            <h4 className="text-sm font-medium text-gray-800 leading-snug mt-1">
-              {rideData?.destination?.address || "Destination address"}
-            </h4>
-          </div>
-        </div>
+        <button
+          onClick={() => console.log("Cancel ride coming soon")}
+          className="h-14 rounded-2xl bg-gray-100 text-gray-800 font-semibold flex items-center justify-center active:scale-95 transition"
+        >
+          Cancel Ride
+        </button>
       </div>
-
-      <div className="rounded-[24px] bg-gray-50 p-4 mb-4">
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-              <FaClock />
-              Time
-            </div>
-
-            <p className="text-sm font-semibold text-gray-800 mt-1">
-              {rideData?.durationMin} min
-            </p>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-              <FaRoad />
-              Distance
-            </div>
-
-            <p className="text-sm font-semibold text-gray-800 mt-1">
-              {rideData?.distanceKm} km
-            </p>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-              <FaWallet />
-              Fare
-            </div>
-
-            <p className="text-sm font-semibold text-gray-800 mt-1">
-              ₹{rideData?.fare}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <a
-        href={captain?.phone ? `tel:${captain.phone}` : undefined}
-        className="w-full h-14 rounded-2xl bg-gray-900 text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition"
-      >
-        <FaPhone className="text-sm" />
-        Call captain
-      </a>
     </div>
   )
 }

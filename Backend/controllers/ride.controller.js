@@ -119,6 +119,7 @@ export const getActiveRideController = async (req, res) => {
             },
         })
             .populate("captain")
+            .select("+otp")
             .sort({ createdAt: -1 });
 
         return res.status(200).json({
@@ -164,6 +165,8 @@ export const acceptRideController = async (req, res) => {
         const captainId = req.captainId
         const { rideId } = req.params
 
+        const otp = Math.floor(1000 + Math.random() * 9000).toString()
+
         const ride = await rideModel.findOneAndUpdate(
             {
                 _id: rideId,
@@ -176,6 +179,7 @@ export const acceptRideController = async (req, res) => {
                     status: "accepted",
                     acceptedAt: new Date(),
                     expiresAt: null,
+                    otp
                 },
             },
             {
@@ -188,6 +192,8 @@ export const acceptRideController = async (req, res) => {
                 message: "Ride already accepted or not available",
             })
         }
+
+        
 
         await captainModel.findByIdAndUpdate(captainId, {
             $set: {

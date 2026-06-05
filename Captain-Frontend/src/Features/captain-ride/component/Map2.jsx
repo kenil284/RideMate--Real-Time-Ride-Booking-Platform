@@ -2,6 +2,13 @@ import React, { useEffect, useRef, useState } from "react"
 import maplibregl from "maplibre-gl"
 import "maplibre-gl/dist/maplibre-gl.css"
 
+const BIKE_IMAGES = {
+  right: "/Bike/bike-right.webp",
+  left: "/Bike/bike-left.webp",
+  front: "/Bike/bike-front.webp",
+  back: "/Bike/bike-back.webp",
+}
+
 const Map2 = ({
   routeCoordinates = [],
   currentLocation,
@@ -14,6 +21,8 @@ const Map2 = ({
   const mapRef = useRef(null)
   const captainMarkerRef = useRef(null)
   const pickupMarkerRef = useRef(null)
+  const routeCoordinatesRef = useRef([])
+  const lastVehicleImageRef = useRef("")
 
   const defaultPosition = {
     lat: 21.1702,
@@ -22,15 +31,23 @@ const Map2 = ({
 
   const [position, setPosition] = useState(defaultPosition)
 
-  // Change this only if image direction is opposite
-  // Try 180 if vehicle faces wrong side
-  // Try 90 or -90 if image is side-wise wrong
-  const VEHICLE_IMAGE_ROTATION_OFFSET = 0
+  useEffect(() => {
+    routeCoordinatesRef.current = routeCoordinates || []
+  }, [routeCoordinates])
 
   const getVehicleImage = () => {
+    if (vehicleType === "bike") return "/Bike/bike-back.webp"
     if (vehicleType === "car") return "/car_3d.png"
     if (vehicleType === "auto") return "/Auto.png"
-    return "/MotorcycleOrange-249-0.png"
+
+    return "/Bike/bike-back.webp"
+  }
+
+  const preloadVehicleImages = () => {
+    Object.values(BIKE_IMAGES).forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
   }
 
   const getLngLat = (location) => {
@@ -68,87 +85,85 @@ const Map2 = ({
       })
   }
 
-  const getPointToSegmentDistance = (point, start, end) => {
-    const dx = end.x - start.x
-    const dy = end.y - start.y
+  const getBearingBetweenPoints = (start, end) => {
+    const startLng = (start[0] * Math.PI) / 180
+    const startLat = (start[1] * Math.PI) / 180
+    const endLng = (end[0] * Math.PI) / 180
+    const endLat = (end[1] * Math.PI) / 180
 
-    if (dx === 0 && dy === 0) {
-      return Math.hypot(point.x - start.x, point.y - start.y)
-    }
+    const dLng = endLng - startLng
 
-    const t = Math.max(
-      0,
-      Math.min(
-        1,
-        ((point.x - start.x) * dx + (point.y - start.y) * dy) /
-          (dx * dx + dy * dy)
-      )
-    )
+    const y = Math.sin(dLng) * Math.cos(endLat)
 
-    const nearestX = start.x + t * dx
-    const nearestY = start.y + t * dy
+    const x =
+      Math.cos(startLat) * Math.sin(endLat) -
+      Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng)
 
-    return Math.hypot(point.x - nearestX, point.y - nearestY)
+    const bearing = (Math.atan2(y, x) * 180) / Math.PI
+
+    return (bearing + 360) % 360
   }
 
-  const getDistance = (point1, point2) => {
-    return Math.abs(point1[0] - point2[0]) + Math.abs(point1[1] - point2[1])
-  }
+  const getNavigationBearing = () => {
+    const route = formatRouteCoordinates(routeCoordinatesRef.current)
 
-  const getVehicleRotation = (map) => {
-    const route = formatRouteCoordinates(routeCoordinates)
-
-    if (!map || route.length < 2) return 0
+    if (route.length < 2) return 0
 
     const captainLngLat = [position.lng, position.lat]
-    const captainPixel = map.project(captainLngLat)
+    const pickupLngLat = getLngLat(pickup)
 
-    let bestStart = route[0]
-    let bestEnd = route[1]
+    let nearestIndex = 0
     let minDistance = Infinity
 
-    for (let i = 0; i < route.length - 1; i++) {
-      const start = route[i]
-      const end = route[i + 1]
-
-      const startPixel = map.project(start)
-      const endPixel = map.project(end)
-
-      const distance = getPointToSegmentDistance(
-        captainPixel,
-        startPixel,
-        endPixel
-      )
+    route.forEach((point, index) => {
+      const distance =
+        Math.abs(point[0] - captainLngLat[0]) +
+        Math.abs(point[1] - captainLngLat[1])
 
       if (distance < minDistance) {
         minDistance = distance
-        bestStart = start
-        bestEnd = end
+        nearestIndex = index
       }
+    })
+
+    const currentPoint = route[nearestIndex]
+
+    const forwardPoint =
+      route[nearestIndex + 6] ||
+      route[nearestIndex + 5] ||
+      route[nearestIndex + 4] ||
+      route[nearestIndex + 3] ||
+      route[nearestIndex + 2] ||
+      route[nearestIndex + 1]
+
+    const backwardPoint =
+      route[nearestIndex - 6] ||
+      route[nearestIndex - 5] ||
+      route[nearestIndex - 4] ||
+      route[nearestIndex - 3] ||
+      route[nearestIndex - 2] ||
+      route[nearestIndex - 1]
+
+    let nextPoint = forwardPoint || backwardPoint
+
+    if (pickupLngLat && forwardPoint && backwardPoint) {
+      const forwardDistanceToPickup =
+        Math.abs(forwardPoint[0] - pickupLngLat[0]) +
+        Math.abs(forwardPoint[1] - pickupLngLat[1])
+
+      const backwardDistanceToPickup =
+        Math.abs(backwardPoint[0] - pickupLngLat[0]) +
+        Math.abs(backwardPoint[1] - pickupLngLat[1])
+
+      nextPoint =
+        forwardDistanceToPickup < backwardDistanceToPickup
+          ? forwardPoint
+          : backwardPoint
     }
 
-    const pickupLngLat = getLngLat(pickup)
+    if (!currentPoint || !nextPoint) return 0
 
-    if (pickupLngLat) {
-      const startDistance = getDistance(bestStart, pickupLngLat)
-      const endDistance = getDistance(bestEnd, pickupLngLat)
-
-      if (startDistance < endDistance) {
-        const temp = bestStart
-        bestStart = bestEnd
-        bestEnd = temp
-      }
-    }
-
-    const startPixel = map.project(bestStart)
-    const endPixel = map.project(bestEnd)
-
-    const angle =
-      Math.atan2(endPixel.y - startPixel.y, endPixel.x - startPixel.x) *
-      180 /
-      Math.PI
-
-    return angle + VEHICLE_IMAGE_ROTATION_OFFSET
+    return getBearingBetweenPoints(currentPoint, nextPoint)
   }
 
   const updateCaptainMarkerStyle = () => {
@@ -162,8 +177,12 @@ const Map2 = ({
 
     if (!img) return
 
-    img.src = getVehicleImage()
-    img.style.transform = `rotateZ(${getVehicleRotation(mapRef.current)}deg)`
+    const vehicleImage = getVehicleImage()
+
+    if (lastVehicleImageRef.current !== vehicleImage) {
+      img.src = vehicleImage
+      lastVehicleImageRef.current = vehicleImage
+    }
   }
 
   const add3DBuildings = (map) => {
@@ -212,29 +231,33 @@ const Map2 = ({
 
     if (!lngLat) return
 
+    const vehicleImage = getVehicleImage()
+
+    lastVehicleImageRef.current = vehicleImage
+
     const markerElement = document.createElement("div")
 
     markerElement.innerHTML = `
       <div style="
-        width: 82px;
-        height: 82px;
+        width: 86px;
+        height: 86px;
         display: flex;
         align-items: center;
         justify-content: center;
         pointer-events: none;
-        transform: translateY(-6px);
+        transform: translateY(-8px);
+        filter: drop-shadow(0 16px 14px rgba(0,0,0,0.35));
       ">
         <img 
           class="captain-vehicle-img"
-          src="${getVehicleImage()}" 
+          src="${vehicleImage}" 
+          draggable="false"
           style="
-            width: 76px;
-            height: 76px;
+            width: 80px;
+            height: 80px;
             object-fit: contain;
-            transform: rotateZ(${getVehicleRotation(map)}deg);
-            transform-origin: 50% 55%;
-            transition: transform 0.25s ease;
-            filter: drop-shadow(0 14px 12px rgba(0,0,0,0.35));
+            transition: opacity 0.2s ease;
+            will-change: opacity;
           "
         />
       </div>
@@ -259,13 +282,32 @@ const Map2 = ({
 
     markerElement.innerHTML = `
       <div style="
-        width: 22px;
-        height: 22px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
-        background: #22c55e;
-        border: 4px solid white;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-      "></div>
+        background: rgba(34,197,94,0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <div style="
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: white;
+          box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          <div style="
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #22c55e;
+          "></div>
+        </div>
+      </div>
     `
 
     pickupMarkerRef.current = new maplibregl.Marker({
@@ -276,8 +318,8 @@ const Map2 = ({
       .addTo(map)
   }
 
-  const drawRoute = (map) => {
-    const finalRoute = formatRouteCoordinates(routeCoordinates)
+  const drawRoute = (map, coordinates = routeCoordinatesRef.current) => {
+    const finalRoute = formatRouteCoordinates(coordinates)
 
     if (finalRoute.length < 2) return
 
@@ -291,6 +333,24 @@ const Map2 = ({
 
     if (map.getSource("route-source")) {
       map.getSource("route-source").setData(routeData)
+
+      if (!map.getLayer("route-line")) {
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route-source",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#111827",
+            "line-width": 4,
+            "line-opacity": 0.95,
+          },
+        })
+      }
+
       return
     }
 
@@ -314,6 +374,10 @@ const Map2 = ({
       },
     })
   }
+
+  useEffect(() => {
+    preloadVehicleImages()
+  }, [])
 
   useEffect(() => {
     const captainLngLat = getLngLat(currentLocation)
@@ -361,18 +425,23 @@ const Map2 = ({
       center: [position.lng, position.lat],
       zoom: 16.5,
       pitch: 55,
-      bearing: -20,
+      bearing: 0,
+      dragRotate: false,
+      touchPitch: false,
       antialias: true,
       attributionControl: false,
     })
 
     mapRef.current = map
 
+    map.dragRotate.disable()
+    map.touchZoomRotate.disableRotation()
+
     map.on("load", () => {
       add3DBuildings(map)
       createCaptainMarker(map, position)
       createPickupMarker(map, pickup)
-      drawRoute(map)
+      drawRoute(map, routeCoordinatesRef.current)
       updateCaptainMarkerStyle()
     })
 
@@ -387,9 +456,10 @@ const Map2 = ({
 
     mapRef.current.flyTo({
       center: [position.lng, position.lat],
-      zoom: 16.5,
-      pitch: 55,
-      bearing: -20,
+      zoom: 17,
+      pitch: 60,
+      bearing: getNavigationBearing(),
+      offset: [0, 120],
       speed: 1.2,
     })
 
@@ -419,31 +489,19 @@ const Map2 = ({
   useEffect(() => {
     if (!mapRef.current) return
 
-    if (mapRef.current.loaded()) {
-      drawRoute(mapRef.current)
-      updateCaptainMarkerStyle()
-    }
-  }, [routeCoordinates])
-
-  useEffect(() => {
-    if (!mapRef.current) return
-
     const map = mapRef.current
 
-    const handleMapMove = () => {
+    const updateRouteOnMap = () => {
+      drawRoute(map, routeCoordinatesRef.current)
       updateCaptainMarkerStyle()
     }
 
-    map.on("move", handleMapMove)
-    map.on("rotate", handleMapMove)
-    map.on("pitch", handleMapMove)
-
-    return () => {
-      map.off("move", handleMapMove)
-      map.off("rotate", handleMapMove)
-      map.off("pitch", handleMapMove)
+    if (map.isStyleLoaded()) {
+      updateRouteOnMap()
+    } else {
+      map.once("load", updateRouteOnMap)
     }
-  }, [routeCoordinates, position, vehicleType, pickup])
+  }, [routeCoordinates])
 
   return <div ref={mapContainer} className="w-full h-full" />
 }

@@ -11,7 +11,7 @@ import mapRouter from "./routes/map.route.js";
 export const app = express();
 
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: ["http://localhost:5173", "http://localhost:5174","https://cz0q5kx4-5173.inc1.devtunnels.ms"],
   credentials: true
 }));
 app.use(cookieParser());

@@ -14,6 +14,8 @@ import { acceptRideService } from "../services/captainRide.service";
 import { useCaptainActiveRide } from "../hooks/useCaptainActiveRide";
 import { useCaptainPickupRoute } from "../hooks/useCaptainPickupRoute";
 import Map2 from "../component/Map2";
+import AcceptedRide from "../component/AcceptedRide";
+import CaptainOtpBox from "../component/CaptainOtpBox";
 ;
 
 
@@ -128,12 +130,12 @@ const CaptainHome = () => {
         })
     }
 
-    useEffect(() => {
-    console.log("Captain current location:", captainCurrentLocation)
-    console.log("Last location:", lastLocation)
-    console.log("Pickup location:", currentRide?.pickup)
-    console.log("Captain route:", captainRoute)
-}, [captainCurrentLocation, lastLocation, currentRide, captainRoute])
+    // useEffect(() => {
+    //     console.log("Captain current location:", captainCurrentLocation)
+    //     console.log("Last location:", lastLocation)
+    //     console.log("Pickup location:", currentRide?.pickup)
+    //     console.log("Captain route:", captainRoute)
+    // }, [captainCurrentLocation, lastLocation, currentRide, captainRoute])
 
 
 
@@ -178,8 +180,24 @@ const CaptainHome = () => {
                         onAccept={handleAcceptRide}
                         onCancel={handleCancelRide}
                     />
+                )}
 
+                {stage === "accepted" && (
+                    <AcceptedRide
+                        ride={currentRide}
+                        routeInfo={routeInfo}
+                        onArrived={() => setStage("otp")}
+                    />
+                )}
 
+                {stage === "otp" && (
+                    <CaptainOtpBox
+                        ride={currentRide}
+                        onBack={() => setStage("accepted")}
+                        onStartRide={(otp) => {
+                            console.log("OTP entered:", otp)
+                        }}
+                    />
                 )}
             </BottomSheet>
         </div>

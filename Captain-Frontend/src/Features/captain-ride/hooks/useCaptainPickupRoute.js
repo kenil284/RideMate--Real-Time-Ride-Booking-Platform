@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { getCaptainToPickupRouteService } from "../services/captainRide.service"
 
-const CHECK_LOCATION_TIME = 15000 // 15 seconds
+const CHECK_LOCATION_TIME = 8000 // 8 seconds
 const MIN_DISTANCE_TO_CALL_API = 25 // meters
 
 const getDistanceInMeters = (lat1, lng1, lat2, lng2) => {
@@ -89,8 +89,6 @@ export const useCaptainPickupRoute = ({ stage, currentRide }) => {
                 console.log("Captain pickup route updated")
                 console.log("Captain route:", route)
 
-                // only for first render map issue
-                // this does not call backend again
                 if (isFirstTime) {
                     routeRefreshTimer1 = setTimeout(() => {
                         setCaptainRoute([...lastRouteRef.current])
@@ -113,13 +111,12 @@ export const useCaptainPickupRoute = ({ stage, currentRide }) => {
                     const currentLat = position.coords.latitude
                     const currentLng = position.coords.longitude
 
-                    setCaptainCurrentLocation({
-                        lat: currentLat,
-                        lng: currentLng,
-                    })
-
-                    // first time always call backend
                     if (isFirstTime) {
+                        setCaptainCurrentLocation({
+                            lat: currentLat,
+                            lng: currentLng,
+                        })
+
                         callRouteApi(currentLat, currentLng, true)
                         return
                     }
@@ -127,6 +124,11 @@ export const useCaptainPickupRoute = ({ stage, currentRide }) => {
                     const lastApiLocation = lastApiLocationRef.current
 
                     if (!lastApiLocation) {
+                        setCaptainCurrentLocation({
+                            lat: currentLat,
+                            lng: currentLng,
+                        })
+
                         callRouteApi(currentLat, currentLng, true)
                         return
                     }
@@ -138,11 +140,17 @@ export const useCaptainPickupRoute = ({ stage, currentRide }) => {
                         currentLng
                     )
 
-                    if (distanceMoved >= MIN_DISTANCE_TO_CALL_API) {
-                        callRouteApi(currentLat, currentLng)
-                    } else {
-                        console.log("Captain not moved enough, no backend request")
+                    if (distanceMoved < MIN_DISTANCE_TO_CALL_API) {
+                        console.log("Captain not moved, no state update, no backend request")
+                        return
                     }
+
+                    setCaptainCurrentLocation({
+                        lat: currentLat,
+                        lng: currentLng,
+                    })
+
+                    callRouteApi(currentLat, currentLng)
                 },
                 () => {
                     console.log("Unable to get captain current location")
@@ -155,10 +163,8 @@ export const useCaptainPickupRoute = ({ stage, currentRide }) => {
             )
         }
 
-        // first time immediate backend request
         updateCaptainRoute(true)
 
-        // after that only check every 15 sec
         intervalId = setInterval(() => {
             updateCaptainRoute(false)
         }, CHECK_LOCATION_TIME)

@@ -52,6 +52,7 @@ const BottomSheet = ({ stage, contentKey, children }) => {
         className={`
         w-full max-w-[430px] mx-auto px-5 py-4
         ${stage === "navigating" ? "h-full py-3" : ""}
+        ${stage === "accepted" ? "pt-2" : ""}
       `}
       >
         <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300 mb-5" />
