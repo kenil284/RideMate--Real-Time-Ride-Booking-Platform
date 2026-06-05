@@ -1,7 +1,8 @@
 import { validationResult } from "express-validator";
 import rideModel from "../Models/ride.model.js";
 import { findNearbyCaptainsForRide } from "../services/captain.service.js";
-import { sendRideRequestToCaptains } from "../socket/socket.emit.js";
+import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains } from "../socket/socket.emit.js";
+import captainModel from "../models/captian.model.js";
 
 
 export const createRideController = async (req, res) => {
@@ -70,6 +71,30 @@ export const createRideController = async (req, res) => {
 
         sendRideRequestToCaptains(nearbyCaptains, ride);
 
+        setTimeout(async () => {
+            try {
+                console.log("no captain found")
+                const currentRide = await rideModel.findById(ride._id)
+
+                if (!currentRide) return
+
+                if (currentRide.status !== "looking") return
+
+                currentRide.status = "no_captain_found"
+                currentRide.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+                await currentRide.save()
+
+                sendNoCaptainFoundToUser(currentRide.rider, currentRide)
+
+                sendRideExpiredToCaptains(nearbyCaptains, currentRide)
+
+
+            } catch (error) {
+                console.log("no captain timeout error:", error.message)
+            }
+        }, 8000)
+
         return res.status(200).json({
             message: "Ride created successfully",
             ride,
@@ -105,5 +130,87 @@ export const getActiveRideController = async (req, res) => {
             message: "Failed to fetch active ride",
             error: error.message,
         });
+    }
+}
+
+export const getCaptainActiveRideController = async (req, res) => {
+    try {
+        const captain = req.captainId
+
+        const activeRide = await rideModel.findOne({
+            captain,
+            status: {
+                $in: ["accepted", "arrived", "started"],
+            },
+        })
+            .populate("rider")
+            .sort({ createdAt: -1 })
+
+        return res.status(200).json({
+            message: "Captain active ride fetched",
+            activeRide: activeRide || null,
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch captain active ride",
+            error: error.message,
+        })
+    }
+}
+
+export const acceptRideController = async (req, res) => {
+    try {
+        const captainId = req.captainId
+        const { rideId } = req.params
+
+        const ride = await rideModel.findOneAndUpdate(
+            {
+                _id: rideId,
+                status: "looking",
+                captain: null,
+            },
+            {
+                $set: {
+                    captain: captainId,
+                    status: "accepted",
+                    acceptedAt: new Date(),
+                    expiresAt: null,
+                },
+            },
+            {
+                new: true,
+            }
+        )
+
+        if (!ride) {
+            return res.status(400).json({
+                message: "Ride already accepted or not available",
+            })
+        }
+
+        await captainModel.findByIdAndUpdate(captainId, {
+            $set: {
+                isAvailable: false,
+                currentRide: ride._id,
+            },
+        })
+
+        const populatedRide = await rideModel.findById(ride._id).populate("captain")
+
+        sendRideAcceptedToUser(populatedRide.rider, populatedRide)
+
+        removeRideRequestFromCaptains(populatedRide._id)
+
+        return res.status(200).json({
+            message: "Ride accepted successfully",
+            ride: populatedRide,
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Failed to accept ride",
+        })
     }
 }

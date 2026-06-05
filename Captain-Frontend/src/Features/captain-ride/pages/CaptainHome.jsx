@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BottomSheet from "../component/BottomSheet";
 import CaptainHeader from "../component/CaptainHeader";
 import LookingForRide from "../component/LookingForRide";
@@ -10,16 +10,75 @@ import { useCaptainLocation } from "../hooks/useCaptainLocation";
 import RideRequest from "../component/RideRequest";
 import { useContext } from "react";
 import { captainContext } from "../../../Context/CaptainContext";
+import { acceptRideService } from "../services/captainRide.service";
+import { useCaptainActiveRide } from "../hooks/useCaptainActiveRide";
+import { useCaptainPickupRoute } from "../hooks/useCaptainPickupRoute";
+import Map2 from "../component/Map2";
 ;
 
 
 const CaptainHome = () => {
 
-    const { captainData } = useContext(captainContext);
+    const { setCaptainData, captainData } = useContext(captainContext);
 
     const [requests, setRequests] = useState([]);
+    const [acceptedRide, setAcceptedRide] = useState(null)
+    const [currentRide, setCurrentRide] = useState({
+        _id: "",
+
+        rider: null,
+        captain: null,
+
+        pickup: {
+            address: "",
+            lat: null,
+            lng: null,
+        },
+
+        destination: {
+            address: "",
+            lat: null,
+            lng: null,
+        },
+
+        distanceKm: 0,
+        durationMin: 0,
+
+        vehicle: {
+            type: "",
+            name: "",
+            image: "",
+            capacity: 1,
+        },
+
+        fare: 0,
+
+        paymentMethod: "cash",
+        paymentStatus: "pending",
+
+        status: "",
+
+        otp: "",
+
+        cancelledBy: null,
+        cancelReason: "",
+
+        acceptedAt: null,
+        arrivedAt: null,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+
+        createdAt: null,
+        updatedAt: null,
+    })
+
+
+
 
     const [stage, setStage] = useState("looking");
+
+    useCaptainActiveRide({ setCurrentRide, setStage })
 
     const { socketstate } = useCaptainSocket({ setRequests, setStage });
 
@@ -27,31 +86,71 @@ const CaptainHome = () => {
 
     const { dashboard, isDashboardLoading } = useCaptainDashboard();
 
-    const { lastLocation } = useCaptainLocation({ isOnline });
+    const { lastLocation } = useCaptainLocation({ isOnline })
 
-    const handleAcceptRide = (ride) => {
-        console.log("Accepted ride:", ride);
+    const { captainCurrentLocation, captainRoute, routeInfo } = useCaptainPickupRoute({ stage, currentRide })
 
-        // later call accept ride API here
-        setStage("accepted");
-    };
+    const handleAcceptRide = async (ride) => {
+        try {
+            const data = await acceptRideService(ride._id)
+
+            setCurrentRide(data.ride)
+            setRequests([])
+            setStage("accepted")
+
+            setCaptainData((prev) => ({
+                ...prev,
+                isAvailable: false,
+                currentRide: data.ride._id,
+            }))
+
+        } catch (error) {
+            console.log(
+                error.response?.data?.message || error.message
+            )
+        }
+    }
+
+    const isAvailabilityDisabled =
+        stage === "accepted" ||
+        stage === "otp" ||
+        stage === "navigating"
 
     const handleCancelRide = (ride) => {
-        setRequests((prev) =>
-            prev.filter((item) => item._id !== ride._id)
-        );
+        setRequests((prev) => {
+            const updatedRequests = prev.filter((item) => item._id !== ride._id)
 
-        if (requests.length <= 1) {
-            setStage("looking");
-        }
-    };
+            if (updatedRequests.length === 0) {
+                setStage("looking")
+            }
+
+            return updatedRequests
+        })
+    }
+
+    useEffect(() => {
+    console.log("Captain current location:", captainCurrentLocation)
+    console.log("Last location:", lastLocation)
+    console.log("Pickup location:", currentRide?.pickup)
+    console.log("Captain route:", captainRoute)
+}, [captainCurrentLocation, lastLocation, currentRide, captainRoute])
 
 
 
     return (
         <div className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-white">
             <div className="absolute inset-0 z-0 bg-[#eef1f4]">
-                <Map />
+                {/* <Map
+                    routeCoordinates={captainRoute}
+                    currentLocation={captainCurrentLocation}
+                    pickup={currentRide?.pickup}
+                /> */}
+                <Map2
+                    routeCoordinates={captainRoute || []}
+                    currentLocation={captainCurrentLocation || lastLocation}
+                    pickup={currentRide?.pickup}
+                    vehicleType={currentRide?.vehicleType || "bike"}
+                />
             </div>
 
             <CaptainHeader
@@ -59,6 +158,7 @@ const CaptainHome = () => {
                 isOnline={isOnline}
                 isUpdating={isUpdating}
                 onToggle={toggleAvailability}
+                isAvailabilityDisabled={isAvailabilityDisabled}
             />
 
             <BottomSheet

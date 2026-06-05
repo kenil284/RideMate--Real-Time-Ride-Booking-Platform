@@ -19,7 +19,7 @@ export const initSocket = (server) => {
 
   captainSocket = io.of("/captain");
   userSocket = io.of("/user");
-  
+
   // auth middleware
   captainSocket.use(async (socket, next) => {
     try {
@@ -79,11 +79,20 @@ export const initSocket = (server) => {
 
     console.log("Captain joined room:", socket.captainId);
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log("Captain disconnected:", socket.captainId, socket.id);
+      try {
+        await captainModel.findByIdAndUpdate(socket.captainId, {
+          $set: {
+            isAvailable: false,
+          },
+        })
+      } catch (error) {
+
+      }
     })
   })
-  
+
 
   userSocket.on("connection", (socket) => {
     console.log("User connected:", socket.userId, socket.id);
@@ -95,6 +104,7 @@ export const initSocket = (server) => {
 
     socket.on("disconnect", () => {
       console.log("User disconnected:", socket.userId, socket.id);
+
     })
   })
 

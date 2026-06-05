@@ -1,7 +1,8 @@
 import { IoMenu } from "react-icons/io5";
+import { enableNotificationSound } from "../services/notificationSound.service";
 
 
-const CaptainHeader = ({ isOnline, onToggle, username = "Captain" }) => {
+const CaptainHeader = ({ isOnline, onToggle,isUpdating, username = "Captain", isAvailabilityDisabled }) => {
   return (
     <div className="absolute top-0 left-0 right-0 z-20 px-5 pt-5 pb-20 bg-gradient-to-b from-white via-white/90 to-transparent">
       <div className="flex items-start justify-between">
@@ -22,10 +23,19 @@ const CaptainHeader = ({ isOnline, onToggle, username = "Captain" }) => {
         </div>
 
         <button
-          onClick={async () => {
-            onToggle();
+          onClick={() => {
+            if (isAvailabilityDisabled) return
+            onToggle()
+            enableNotificationSound()
           }}
-          className="h-11 px-3 rounded-2xl bg-white shadow-lg flex items-center gap-2 active:scale-95 transition"
+          disabled={isAvailabilityDisabled || isUpdating}
+          className={`
+    h-11 px-3 rounded-2xl bg-white shadow-lg flex items-center gap-2 transition
+    ${isAvailabilityDisabled
+              ? "opacity-50 cursor-not-allowed"
+              : "active:scale-95"
+            }
+  `}
         >
           <span
             className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-500" : "bg-gray-400"

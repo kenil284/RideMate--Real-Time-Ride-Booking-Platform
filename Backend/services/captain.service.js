@@ -60,6 +60,7 @@ export const findNearbyCaptainsForRide = async (ride) => {
     })
     .lean()
 
+
   return captains;
 };
 

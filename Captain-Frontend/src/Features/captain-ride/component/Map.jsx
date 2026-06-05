@@ -1,68 +1,161 @@
-import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import React, { useEffect, useMemo, useState } from "react"
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+} from "react-leaflet"
+import "leaflet/dist/leaflet.css"
 
-const RecenterMap = ({ position }) => {
-  const map = useMap();
+const RecenterMap = ({ pickupPosition, destinationPosition, routeCoordinates }) => {
+  const map = useMap()
 
   useEffect(() => {
-    if (position) {
-      map.setView(position, 15);
+    if (routeCoordinates.length > 0) {
+      map.fitBounds(routeCoordinates, {
+        padding: [60, 60],
+      })
+      return
     }
-  }, [position, map]);
 
-  return null;
-};
+    if (pickupPosition && destinationPosition) {
+      map.fitBounds([pickupPosition, destinationPosition], {
+        padding: [60, 60],
+      })
+      return
+    }
 
-const Map = () => {
-  const defaultPosition = [21.1702, 72.8311]; // Surat
-  const [position, setPosition] = useState(defaultPosition);
+    if (pickupPosition) {
+      map.setView(pickupPosition, 15)
+      return
+    }
+  }, [pickupPosition, destinationPosition, routeCoordinates, map])
+
+  return null
+}
+
+const Map = ({ pickup, destination, routeCoordinates = [] }) => {
+  console.log(
+    "Map pickup:",
+    pickup,
+    "destination:",
+    destination,
+    "routeCoordinates:",
+    routeCoordinates
+  )
+
+  const defaultPosition = [21.1702, 72.8311]
+  const [position, setPosition] = useState(defaultPosition)
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      console.log("Geolocation is not supported");
-      return;
+      console.log("Geolocation is not supported")
+      return
     }
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        setPosition([lat, lng]);
+        setPosition([pos.coords.latitude, pos.coords.longitude])
       },
       (err) => {
-        console.log("Location error:", err.message);
+        console.log("Location error:", err.message)
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
       }
-    );
-  }, []);
+    )
+  }, [])
+
+  const pickupPosition =
+    pickup?.lat != null && pickup?.lng != null
+      ? [Number(pickup.lat), Number(pickup.lng)]
+      : null
+
+  const destinationPosition =
+    destination?.lat != null && destination?.lng != null
+      ? [Number(destination.lat), Number(destination.lng)]
+      : null
+
+  const formattedRouteCoordinates = useMemo(() => {
+    if (!Array.isArray(routeCoordinates)) {
+      return []
+    }
+
+    return routeCoordinates
+      .map((coord) => {
+        if (Array.isArray(coord)) {
+          return [Number(coord[0]), Number(coord[1])]
+        }
+
+        if (coord?.lat != null && coord?.lng != null) {
+          return [Number(coord.lat), Number(coord.lng)]
+        }
+
+        return null
+      })
+      .filter((coord) => {
+        if (!coord) return false
+
+        const [lat, lng] = coord
+
+        return (
+          !isNaN(lat) &&
+          !isNaN(lng) &&
+          lat >= -90 &&
+          lat <= 90 &&
+          lng >= -180 &&
+          lng <= 180
+        )
+      })
+  }, [routeCoordinates])
+
+  const mapCenter = pickupPosition || position
 
   return (
-    <div className="w-full h-full">
-      <MapContainer
-        center={position}
-        zoom={15}
-        scrollWheelZoom={true}
-        zoomControl={false}
-        className="w-full h-full z-0"
-      >
-        <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <MapContainer
+      center={mapCenter}
+      zoom={15}
+      className="w-full h-full"
+      zoomControl={false}
+    >
+      <TileLayer
+        attribution="&copy; OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      <RecenterMap
+        pickupPosition={pickupPosition}
+        destinationPosition={destinationPosition}
+        routeCoordinates={formattedRouteCoordinates}
+      />
+
+      {formattedRouteCoordinates.length > 0 && (
+        <Polyline
+          positions={formattedRouteCoordinates}
+          pathOptions={{
+            color: "black",
+            weight: 5,
+            opacity: 0.85,
+          }}
         />
+      )}
 
-        <RecenterMap position={position} />
-
-        <Marker position={position}>
-          <Popup>Your current location</Popup>
+      {pickupPosition && (
+        <Marker position={pickupPosition}>
+          <Popup>Pickup</Popup>
         </Marker>
-      </MapContainer>
-    </div>
-  );
-};
+      )}
 
-export default Map;
+      {destinationPosition && (
+        <Marker position={destinationPosition}>
+          <Popup>Destination</Popup>
+        </Marker>
+      )}
+    </MapContainer>
+  )
+}
+
+export default Map

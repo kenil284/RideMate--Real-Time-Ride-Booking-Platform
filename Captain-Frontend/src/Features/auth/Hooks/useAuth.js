@@ -1,7 +1,7 @@
 
 import { use, useContext, useState } from "react";
 import { login,Register } from "../services/auth.api";
-import { captainContext } from "../../../Context/captainContext";
+import { captainContext } from "../../../Context/CaptainContext"
 
 
 export const useAuth = () => {

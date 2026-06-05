@@ -21,7 +21,50 @@ const Ride = () => {
     const [stage, setStage] = useState("loading");
     const [activeField, setActiveField] = useState("pickup");
 
+    // const [rideData, setRideData] = useState({
+    //     rideId: "",
+
+    //     pickup: {
+    //         address: "",
+    //         lat: null,
+    //         lng: null,
+    //     },
+
+    //     destination: {
+    //         address: "",
+    //         lat: null,
+    //         lng: null,
+    //     },
+
+    //     distanceKm: 0,
+    //     durationMin: 0,
+
+    //     vehicle: null,
+    //     vehicleType: "",
+    //     fare: 0,
+
+    //     driver: null,
+
+    //     status: "",
+
+    //     paymentMethod: "cash",
+    //     paymentStatus: "pending",
+
+    //     otp: "",
+
+    //     acceptedAt: null,
+    //     arrivedAt: null,
+    //     startedAt: null,
+    //     completedAt: null,
+    //     cancelledAt: null,
+    // })
+
+
     const [rideData, setRideData] = useState({
+        _id: "",
+        rider: null,
+        captain: null,
+
         pickup: {
             address: "",
             lat: null,
@@ -37,12 +80,27 @@ const Ride = () => {
         distanceKm: 0,
         durationMin: 0,
 
-        vehicle: null,
-        vehicleType: "",
+        vehicle: {
+            type: "",
+            name: "",
+            image: "",
+            capacity: 1,
+        },
+
         fare: 0,
 
-        driver: null,
+        paymentMethod: "cash",
+        paymentStatus: "pending",
+
         status: "",
+
+        otp: "",
+
+        acceptedAt: null,
+        arrivedAt: null,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
     })
 
     const { searchValue, suggestions, isSearching } = useLocationSearch({
@@ -67,47 +125,53 @@ const Ride = () => {
 
     const { getActiveRide, isActiveRideLoading } = useActiveRide();
 
-    useRiderSocket()
+    useRiderSocket({ setRideData, setStage })
 
+    const getStageFromRideStatus = (status) => {
+        if (status === "looking") {
+            return "looking"
+        }
+
+        if (
+            status === "accepted" ||
+            status === "arrived" ||
+            status === "started"
+        ) {
+            return "waiting"
+        }
+
+        if (status === "no_captain_found") {
+            return "confirm"
+        }
+
+        return "location"
+    }
 
     useEffect(() => {
-        const checkActiveRide = async () => {
-            const ride = await getActiveRide();
+    const checkActiveRide = async () => {
+        const ride = await getActiveRide()
 
-            if (!ride) {
-                setStage("location");
-                return;
-            }
+        if (!ride) {
+            setStage("location")
+            return
+        }
 
-            setRideData((prev) => ({
-                ...prev,
-                rideId: ride._id,
-                pickup: ride.pickup,
-                destination: ride.destination,
-                distanceKm: ride.distanceKm,
-                durationMin: ride.durationMin,
-                vehicle: ride.vehicle,
-                vehicleType: ride.vehicle?.type || "",
-                fare: ride.fare,
-                driver: ride.captain,
-                status: ride.status,
-            }));
+        setRideData((prev) => ({
+            ...prev,
+            ...ride,
 
-            if (ride.status === "looking") {
-                setStage("looking");
-            } else if (
-                ride.status === "accepted" ||
-                ride.status === "arrived" ||
-                ride.status === "started"
-            ) {
-                setStage("waiting");
-            } else {
-                setStage("location");
-            }
-        };
+            vehicle: {
+                ...prev.vehicle,
+                ...ride.vehicle,
+            },
+        }))
 
-        checkActiveRide();
-    }, []);
+        setStage(getStageFromRideStatus(ride.status))
+    }
+
+    checkActiveRide()
+}, [])
+
     const updateLocationText = (field, value) => {
         setRideData((prev) => ({
             ...prev,

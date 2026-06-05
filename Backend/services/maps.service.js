@@ -193,36 +193,44 @@ export const getSuggestionsService = async (input) => {
 
 };
 
-export const getDistanceTimeService = async ({ pickupLat, pickupLng, destinationLat, destinationLng, mode = "drive" }) => {
-
+export const getDistanceTimeService = async ({
+    pickupLat,
+    pickupLng,
+    destinationLat,
+    destinationLng,
+    mode = "drive",
+}) => {
     if (!pickupLat || !pickupLng || !destinationLat || !destinationLng) {
-        throw new Error("Pickup and destination coordinates are required");
+        throw new Error("Pickup and destination coordinates are required")
     }
+
 
     const response = await axios.get("https://api.geoapify.com/v1/routing", {
         params: {
             waypoints: `${pickupLat},${pickupLng}|${destinationLat},${destinationLng}`,
-            mode: mode,
+            mode,
             apiKey: process.env.GEOAPIFY_API_KEY,
         },
-    });
+    })
 
-    const route = response.data.features?.[0];
+    const route = response.data.features?.[0]
 
     if (!route) {
-        throw new Error("Route not found");
+        throw new Error("Route not found")
     }
 
-    const distanceMeters = route.properties.distance;
-    const durationSeconds = route.properties.time;
+    const distanceMeters = route.properties.distance
+    const durationSeconds = route.properties.time
 
-    const distanceKm = Number((distanceMeters / 1000).toFixed(2));
-    const durationMin = Math.ceil(durationSeconds / 60);
+    const distanceKm = Number((distanceMeters / 1000).toFixed(2))
+    const durationMin = Math.ceil(durationSeconds / 60)
 
-    const routeCoordinates = route.geometry.coordinates.map((coord) => {
-        const [lng, lat] = coord;
-        return [lat, lng];
-    });
+    const coordinates = route.geometry.coordinates
+
+    const routeCoordinates = Array.isArray(coordinates[0][0])
+        ? coordinates.flatMap((line) => line)
+        : coordinates
+
 
     return {
         distanceMeters,
@@ -230,8 +238,8 @@ export const getDistanceTimeService = async ({ pickupLat, pickupLng, destination
         durationSeconds,
         durationMin,
         routeCoordinates,
-    };
-};
+    }
+}
 
 // for geoapify
 // export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
@@ -353,3 +361,5 @@ export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
         placeId: item.id || "",
     };
 };
+
+   

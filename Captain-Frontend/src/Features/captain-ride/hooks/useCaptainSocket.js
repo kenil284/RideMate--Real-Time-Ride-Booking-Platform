@@ -19,14 +19,42 @@ export const useCaptainSocket = ({ setRequests, setStage }) => {
     });
 
     socket.on("new-ride-request", ({ ride }) => {
-      console.log("New ride request received:", ride);
+
 
       playRideRequestSound();
 
       setRequests((prev) => [...prev, ride]);
       setStage("requests");
     });
-  }, []);
+
+
+    socket.on("ride-request-expired", ({ rideId }) => {
+
+      console.log("ride request expired")
+      setRequests((prev) => {
+        const updatedRequests = prev.filter((ride) => ride._id !== rideId)
+
+        if (updatedRequests.length === 0) {
+          setStage("looking")
+        }
+
+        return updatedRequests
+      })
+    })
+
+
+    socket.on("ride-accepted", ({ ride }) => {
+      console.log("Ride accepted:", ride)
+
+      setRideData((prev) => ({
+        ...prev,
+        ...ride,
+      }))
+
+      setStage("waiting")
+    })
+    
+  }, [])
 
   return { socketstate };
 };

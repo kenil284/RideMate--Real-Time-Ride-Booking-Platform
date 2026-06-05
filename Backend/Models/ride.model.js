@@ -110,6 +110,7 @@ const rideSchema = new mongoose.Schema(
                 "started",
                 "completed",
                 "cancelled",
+                "no_captain_found"
             ],
             default: "looking",
         },
@@ -155,9 +156,16 @@ const rideSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+
+        expiresAt: {
+            type: Date,
+            default: null,
+        },
     },
     { timestamps: true }
 );
+
+rideSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
 rideSchema.index({ rider: 1 , status: 1});
 rideSchema.index({ captain: 1, status: 1 });

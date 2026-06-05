@@ -5,6 +5,7 @@ import userRouter from "./routes/user.route.js";
 import captainRouter from "./routes/captain.route.js";
 import locationRouter from "./routes/location.route.js";
 import rideRouter from "./routes/ride.route.js";
+import mapRouter from "./routes/map.route.js";
 
 
 export const app = express();
@@ -21,4 +22,5 @@ app.use("/api/user", userRouter);
 app.use("/api/captain",captainRouter)
 app.use("/api/location",locationRouter)
 app.use("/api/ride",rideRouter)
+app.use("/api/map",mapRouter)
 

@@ -6,7 +6,7 @@ import { disableNotificationSound, enableNotificationSound } from "../services/n
 
 
 const LookingForRide = ({ dashboard, isOnline }) => {
-  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   const handleToggleSound = async () => {
     if (isSoundEnabled) {
