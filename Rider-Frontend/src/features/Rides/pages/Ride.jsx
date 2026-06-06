@@ -16,6 +16,7 @@ import useCreateRide from "../Hooks/useCreateRide";
 import useActiveRide from "../Hooks/useActiveRide";
 import Map2 from "../component/Map2";
 import { useRiderSocket } from "../Hooks/useRiderSocket";
+import RideStarted from "../component/RideStarted";
 
 const Ride = () => {
     const [stage, setStage] = useState("loading");
@@ -101,6 +102,11 @@ const Ride = () => {
         startedAt: null,
         completedAt: null,
         cancelledAt: null,
+        captainToPickupRoute: [],
+        captainToPickupInfo: {
+            distanceKm: 0,
+            durationMin: 0,
+        },
     })
 
     const { searchValue, suggestions, isSearching } = useLocationSearch({
@@ -132,12 +138,12 @@ const Ride = () => {
             return "looking"
         }
 
-        if (
-            status === "accepted" ||
-            status === "arrived" ||
-            status === "started"
-        ) {
+        if (status === "accepted" || status === "arrived") {
             return "waiting"
+        }
+
+        if (status === "started") {
+            return "riding"
         }
 
         if (status === "no_captain_found") {
@@ -148,29 +154,29 @@ const Ride = () => {
     }
 
     useEffect(() => {
-    const checkActiveRide = async () => {
-        const ride = await getActiveRide()
+        const checkActiveRide = async () => {
+            const ride = await getActiveRide()
 
-        if (!ride) {
-            setStage("location")
-            return
+            if (!ride) {
+                setStage("location")
+                return
+            }
+
+            setRideData((prev) => ({
+                ...prev,
+                ...ride,
+
+                vehicle: {
+                    ...prev.vehicle,
+                    ...ride.vehicle,
+                },
+            }))
+
+            setStage(getStageFromRideStatus(ride.status))
         }
 
-        setRideData((prev) => ({
-            ...prev,
-            ...ride,
-
-            vehicle: {
-                ...prev.vehicle,
-                ...ride.vehicle,
-            },
-        }))
-
-        setStage(getStageFromRideStatus(ride.status))
-    }
-
-    checkActiveRide()
-}, [])
+        checkActiveRide()
+    }, [])
 
     const updateLocationText = (field, value) => {
         setRideData((prev) => ({
@@ -256,15 +262,32 @@ const Ride = () => {
     };
 
 
-
+    const isCaptainTracking =
+        ["accepted", "arrived", "started"].includes(rideData.status) &&
+        rideData.captain?.location?.coordinates?.length === 2
 
     return (
         <div className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-white">
 
             {/* Map  */}
             <div className="absolute inset-0 z-0 bg-[#e5e5e5]">
-                <Map />
-                {/* <Map2/> */}
+                {/* <Map /> */}
+
+                <Map2
+                    routeCoordinates={
+                        isCaptainTracking
+                            ? rideData.captainToPickupRoute
+                            : rideData.vehicle?.routeCoordinates || []
+                    }
+                    currentLocation={
+                        isCaptainTracking
+                            ? rideData.captain?.location
+                            : null
+                    }
+                    pickup={isCaptainTracking ? rideData.pickup : null}
+                    vehicleType={"bike"}
+                    showVehicleMarker={isCaptainTracking}
+                />
             </div>
 
             {/* Small top gradient */}
@@ -346,6 +369,10 @@ const Ride = () => {
 
                 {stage === "waiting" && (
                     <WaitingForDriver rideData={rideData} />
+                )}
+
+                {stage === "riding" && (
+                    <RideStarted rideData={rideData} />
                 )}
             </BottomSheet>
         </div>

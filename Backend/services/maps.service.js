@@ -231,6 +231,24 @@ export const getDistanceTimeService = async ({
         ? coordinates.flatMap((line) => line)
         : coordinates
 
+    const instructions = []
+
+    if (route.properties.legs) {
+        route.properties.legs.forEach((leg) => {
+            if (leg.steps) {
+                leg.steps.forEach((step) => {
+                    instructions.push({
+                        text: step.instruction?.text || "",
+                        distanceMeters: step.distance || 0,
+                        distanceKm: Number(((step.distance || 0) / 1000).toFixed(2)),
+                        durationSeconds: step.time || 0,
+                        durationMin: Math.ceil((step.time || 0) / 60),
+                    })
+                })
+            }
+        })
+    }
+
 
     return {
         distanceMeters,
@@ -238,6 +256,7 @@ export const getDistanceTimeService = async ({
         durationSeconds,
         durationMin,
         routeCoordinates,
+        instructions
     }
 }
 
@@ -362,4 +381,3 @@ export const getAddressFromCoordinatesService = async ({ lat, lng }) => {
     };
 };
 
-   

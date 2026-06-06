@@ -10,18 +10,21 @@ import { useCaptainLocation } from "../hooks/useCaptainLocation";
 import RideRequest from "../component/RideRequest";
 import { useContext } from "react";
 import { captainContext } from "../../../Context/CaptainContext";
-import { acceptRideService } from "../services/captainRide.service";
+import { acceptRideService, completeRideService, startRideService } from "../services/captainRide.service";
 import { useCaptainActiveRide } from "../hooks/useCaptainActiveRide";
 import { useCaptainPickupRoute } from "../hooks/useCaptainPickupRoute";
 import Map2 from "../component/Map2";
 import AcceptedRide from "../component/AcceptedRide";
 import CaptainOtpBox from "../component/CaptainOtpBox";
+import ActiveRideHeader from "../component/ActiveRideHeader";
+import { useCaptainDestinationRoute } from "../hooks/useCaptainDestinationRoute";
+import NavigatingRide from "../component/NavigatingRide";
 ;
 
 
 const CaptainHome = () => {
 
-    const { setCaptainData, captainData } = useContext(captainContext);
+    const { setCaptainData, captainData, openalert } = useContext(captainContext);
 
     const [requests, setRequests] = useState([]);
     const [acceptedRide, setAcceptedRide] = useState(null)
@@ -90,7 +93,23 @@ const CaptainHome = () => {
 
     const { lastLocation } = useCaptainLocation({ isOnline })
 
-    const { captainCurrentLocation, captainRoute, routeInfo } = useCaptainPickupRoute({ stage, currentRide })
+    const { nextInstruction, captainCurrentLocation, captainRoute, routeInfo, } = useCaptainPickupRoute({
+        stage, currentRide,
+        onSendLocation: ({ rideId, lat, lng }) => {
+            if (!socketstate) return
+
+            socketstate.emit("captain-location-update", {
+                rideId,
+                lat,
+                lng,
+            })
+        },
+    })
+
+    const { captainDestinationLocation, captainDestinationRoute, destinationRouteInfo, destinationInstruction, } = useCaptainDestinationRoute({
+        stage,
+        currentRide,
+    })
 
     const handleAcceptRide = async (ride) => {
         try {
@@ -109,6 +128,25 @@ const CaptainHome = () => {
         } catch (error) {
             console.log(
                 error.response?.data?.message || error.message
+            )
+        }
+    }
+
+
+    const onStartRide = async (otp) => {
+        try {
+            const data = await startRideService({
+                rideId: currentRide._id,
+                otp,
+            })
+            openalert("Success", data.message)
+
+            setCurrentRide(data.ride)
+            setStage("navigating")
+        } catch (error) {
+            openalert(
+                "Error",
+                error.response?.data?.message || "Failed to start ride"
             )
         }
     }
@@ -137,7 +175,42 @@ const CaptainHome = () => {
     //     console.log("Captain route:", captainRoute)
     // }, [captainCurrentLocation, lastLocation, currentRide, captainRoute])
 
+    const mapRoute = stage === "navigating"
+        ? captainDestinationRoute
+        : captainRoute
 
+    const mapLocation = stage === "navigating"
+        ? captainDestinationLocation
+        : captainCurrentLocation
+
+    const mapTarget = stage === "navigating"
+        ? currentRide?.destination
+        : currentRide?.pickup
+
+
+
+    const handleCompleteRide = async () => {
+        try {
+            const data = await completeRideService(currentRide._id)
+
+            setCurrentRide(null)
+            setStage("looking")
+
+            setCaptainData((prev) => ({
+                ...prev,
+                currentRide: null,
+                totalRides: (prev.totalRides || 0) + 1,
+            }))
+
+            openalert("Success", data.message || "Ride completed successfully")
+
+        } catch (error) {
+            openalert(
+                "Error",
+                error.response?.data?.message || "Failed to complete ride"
+            )
+        }
+    }
 
     return (
         <div className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-white">
@@ -148,20 +221,30 @@ const CaptainHome = () => {
                     pickup={currentRide?.pickup}
                 /> */}
                 <Map2
-                    routeCoordinates={captainRoute || []}
-                    currentLocation={captainCurrentLocation || lastLocation}
-                    pickup={currentRide?.pickup}
-                    vehicleType={currentRide?.vehicleType || "bike"}
+                    routeCoordinates={mapRoute}
+                    currentLocation={mapLocation}
+                    pickup={mapTarget}
+                    vehicleType={currentRide?.vehicle?.type || "bike"}
                 />
             </div>
 
-            <CaptainHeader
-                username={captainData?.fullname?.firstname || "Captain"}
-                isOnline={isOnline}
-                isUpdating={isUpdating}
-                onToggle={toggleAvailability}
-                isAvailabilityDisabled={isAvailabilityDisabled}
-            />
+            {isAvailabilityDisabled ? (
+                <ActiveRideHeader
+                    ride={currentRide}
+                    routeInfo={routeInfo}
+                    nextInstruction={nextInstruction}
+                />
+            ) : (
+                <CaptainHeader
+                    username={captainData?.fullname?.firstname || "Captain"}
+                    isOnline={isOnline}
+                    isUpdating={isUpdating}
+                    onToggle={toggleAvailability}
+                    isAvailabilityDisabled={isAvailabilityDisabled}
+                />
+            )}
+
+
 
             <BottomSheet
                 stage={stage}
@@ -194,9 +277,31 @@ const CaptainHome = () => {
                     <CaptainOtpBox
                         ride={currentRide}
                         onBack={() => setStage("accepted")}
-                        onStartRide={(otp) => {
-                            console.log("OTP entered:", otp)
-                        }}
+                        onStartRide={onStartRide}
+                    />
+                )}
+
+                {(stage === "accepted" || stage === "navigating") && (
+                    <ActiveRideHeader
+                        ride={currentRide}
+                        routeInfo={
+                            stage === "navigating"
+                                ? destinationRouteInfo
+                                : routeInfo
+                        }
+                        nextInstruction={
+                            stage === "navigating"
+                                ? destinationInstruction
+                                : nextInstruction
+                        }
+                        stage={stage}
+                    />
+                )}
+
+                {stage === "navigating" && (
+                    <NavigatingRide
+                        ride={currentRide}
+                        onComplete={handleCompleteRide}
                     />
                 )}
             </BottomSheet>

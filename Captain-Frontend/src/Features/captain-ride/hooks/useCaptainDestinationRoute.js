@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { getCaptainToPickupRouteService } from "../services/captainRide.service"
+import { getCaptainToDestinationRouteService } from "../services/captainRide.service"
 
-const SEND_LOCATION_TIME = 8000
+
 const MIN_DISTANCE_TO_CALL_ROUTE_API = 25
 
 const getDistanceInMeters = (lat1, lng1, lat2, lng2) => {
@@ -22,87 +22,65 @@ const getDistanceInMeters = (lat1, lng1, lat2, lng2) => {
     return R * c
 }
 
-export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) => {
-    const [captainCurrentLocation, setCaptainCurrentLocation] = useState(null)
-    const [captainRoute, setCaptainRoute] = useState([])
-    const [routeInfo, setRouteInfo] = useState({
+export const useCaptainDestinationRoute = ({ stage, currentRide }) => {
+    const [captainDestinationLocation, setCaptainDestinationLocation] = useState(null)
+    const [captainDestinationRoute, setCaptainDestinationRoute] = useState([])
+    const [destinationRouteInfo, setDestinationRouteInfo] = useState({
         distanceKm: 0,
         durationMin: 0,
     })
-
-    const [nextInstruction, setNextInstruction] = useState(null)
-
+    const [destinationInstruction, setDestinationInstruction] = useState(null)
 
     const isRunningRef = useRef(false)
     const lastRouteApiLocationRef = useRef(null)
-    const latestLocationRef = useRef(null)
-    const lastRouteRef = useRef([])
 
     useEffect(() => {
-        if (stage !== "accepted") {
-            setCaptainCurrentLocation(null)
-            setCaptainRoute([])
-            setRouteInfo({
+        if (stage !== "navigating") {
+            setCaptainDestinationLocation(null)
+            setCaptainDestinationRoute([])
+            setDestinationRouteInfo({
                 distanceKm: 0,
                 durationMin: 0,
             })
+            setDestinationInstruction(null)
 
             isRunningRef.current = false
             lastRouteApiLocationRef.current = null
-            latestLocationRef.current = null
-            lastRouteRef.current = []
 
             return
         }
 
-        if (!currentRide?.pickup?.lat || !currentRide?.pickup?.lng) return
+        if (!currentRide?.destination?.lat || !currentRide?.destination?.lng) return
         if (!navigator.geolocation) return
 
         let watchId
-        let sendLocationInterval
-        let routeRefreshTimer1
-        let routeRefreshTimer2
 
-        const callRouteApi = async (currentLat, currentLng, isFirstTime = false) => {
+        const callRouteApi = async (currentLat, currentLng) => {
             if (isRunningRef.current) return
 
             try {
                 isRunningRef.current = true
 
-                const data = await getCaptainToPickupRouteService({
-                    rideId: currentRide._id,
+                const data = await getCaptainToDestinationRouteService({
                     currentLat,
                     currentLng,
-                    pickupLat: currentRide.pickup.lat,
-                    pickupLng: currentRide.pickup.lng,
+                    destinationLat: currentRide.destination.lat,
+                    destinationLng: currentRide.destination.lng,
                     vehicleType: currentRide.vehicle?.type,
                 })
 
-                setNextInstruction(data.instructions?.[0] || null)
+                setCaptainDestinationRoute(data.routeCoordinates || [])
 
-                const route = data.routeCoordinates || data.route || []
-
-                lastRouteRef.current = route
-                setCaptainRoute([...route])
-
-                setRouteInfo({
+                setDestinationRouteInfo({
                     distanceKm: data.distanceKm || 0,
                     durationMin: data.durationMin || 0,
                 })
 
+                setDestinationInstruction(data.instructions?.[0] || null)
+
                 lastRouteApiLocationRef.current = {
                     lat: currentLat,
                     lng: currentLng,
-                }
-
-                if (isFirstTime) {
-                    routeRefreshTimer1 = setTimeout(() => {
-                        setCaptainRoute([...lastRouteRef.current])
-                    }, 1500)
-
-                    routeRefreshTimer2 = setTimeout(() => {
-                        setCaptainRoute([...lastRouteRef.current])
-                    }, 3000)
                 }
             } catch (error) {
                 console.log(error.response?.data?.message || error.message)
@@ -115,18 +93,15 @@ export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) =>
             const currentLat = position.coords.latitude
             const currentLng = position.coords.longitude
 
-            const newLocation = {
+            setCaptainDestinationLocation({
                 lat: currentLat,
                 lng: currentLng,
-            }
-
-            latestLocationRef.current = newLocation
-            setCaptainCurrentLocation(newLocation)
+            })
 
             const lastRouteApiLocation = lastRouteApiLocationRef.current
 
             if (!lastRouteApiLocation) {
-                callRouteApi(currentLat, currentLng, true)
+                callRouteApi(currentLat, currentLng)
                 return
             }
 
@@ -145,7 +120,7 @@ export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) =>
         watchId = navigator.geolocation.watchPosition(
             handleLocationChange,
             () => {
-                console.log("Unable to watch captain current location")
+                console.log("Unable to watch captain destination location")
             },
             {
                 enableHighAccuracy: true,
@@ -154,30 +129,15 @@ export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) =>
             }
         )
 
-        sendLocationInterval = setInterval(() => {
-            if (!latestLocationRef.current) return
-
-            if (onSendLocation) {
-                onSendLocation({
-                    rideId: currentRide._id,
-                    lat: latestLocationRef.current.lat,
-                    lng: latestLocationRef.current.lng,
-                })
-            }
-        }, SEND_LOCATION_TIME)
-
         return () => {
             navigator.geolocation.clearWatch(watchId)
-            clearInterval(sendLocationInterval)
-            clearTimeout(routeRefreshTimer1)
-            clearTimeout(routeRefreshTimer2)
         }
     }, [stage, currentRide?._id])
 
     return {
-        captainCurrentLocation,
-        captainRoute,
-        routeInfo,
-        nextInstruction
+        captainDestinationLocation,
+        captainDestinationRoute,
+        destinationRouteInfo,
+        destinationInstruction,
     }
 }

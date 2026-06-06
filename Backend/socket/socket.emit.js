@@ -31,19 +31,51 @@ export const sendRideExpiredToCaptains = (captains, ride) => {
 }
 
 export const sendRideAcceptedToUser = (userId, ride) => {
+  const userSocket = getUserSocket()
+
+
+
+  userSocket.to(userId.toString()).emit("ride-accepted", {
+    ride,
+  })
+}
+
+export const removeRideRequestFromCaptains = (rideId) => {
+  const captainSocket = getCaptainSocket()
+
+  captainSocket.emit("ride-request-expired", {
+    rideId: rideId.toString(),
+  })
+}
+
+export const sendCaptainLocationToRider = ({ riderId, rideId, lat, lng,distanceKm,durationMin, routeCoordinates }) => {
+  const userSocket = getUserSocket()
+
+  console.log("captain location updated")
+
+
+  userSocket.to(riderId.toString()).emit("captain-location-updated", {
+    rideId: rideId.toString(),
+    lat: Number(lat),
+    lng: Number(lng),
+    distanceKm,
+    durationMin,
+    routeCoordinates,
+  })
+}
+
+export const sendRideStartedToUser = (userId, ride) => {
     const userSocket = getUserSocket()
 
-    
-
-    userSocket.to(userId.toString()).emit("ride-accepted", {
+    userSocket.to(userId.toString()).emit("ride-started", {
         ride,
     })
 }
 
-export const removeRideRequestFromCaptains = (rideId) => {
-    const captainSocket = getCaptainSocket()
+export const sendRideCompletedToUser = (userId, ride) => {
+    const userSocket = getUserSocket()
 
-    captainSocket.emit("ride-request-expired", {
-        rideId: rideId.toString(),
+    userSocket.to(userId.toString()).emit("ride-completed", {
+        ride,
     })
 }

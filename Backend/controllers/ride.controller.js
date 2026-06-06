@@ -1,8 +1,9 @@
 import { validationResult } from "express-validator";
 import rideModel from "../Models/ride.model.js";
 import { findNearbyCaptainsForRide } from "../services/captain.service.js";
-import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains } from "../socket/socket.emit.js";
+import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
 import captainModel from "../models/captian.model.js";
+import { getDistanceTimeService } from "../services/maps.service.js";
 
 
 export const createRideController = async (req, res) => {
@@ -48,6 +49,8 @@ export const createRideController = async (req, res) => {
             });
         }
 
+        const otp = Math.floor(1000 + Math.random() * 9000).toString()
+
         const ride = await rideModel.create({
             rider,
             pickup,
@@ -63,6 +66,7 @@ export const createRideController = async (req, res) => {
             durationMin: durationMin || 0,
             paymentMethod: paymentMethod || "cash",
             status: "looking",
+            otp
         });
 
         const nearbyCaptains = await findNearbyCaptainsForRide(ride);
@@ -109,28 +113,79 @@ export const createRideController = async (req, res) => {
 
 }
 
+
+
+const getRouteMode = (vehicleType) => {
+    if (vehicleType === "bike") {
+        return "motorcycle"
+    }
+
+    if (vehicleType === "auto") {
+        return "scooter"
+    }
+
+    return "drive"
+}
+
 export const getActiveRideController = async (req, res) => {
     try {
-        const rider = req.userId;
-        const activeRide = await rideModel.findOne({
-            rider,
-            status: {
-                $in: ["looking", "accepted", "arrived", "started"],
-            },
-        })
-            .populate("captain")
+        const rider = req.userId
+
+        const activeRide = await rideModel
+            .findOne({
+                rider,
+                status: {
+                    $in: ["looking", "accepted", "arrived", "started"],
+                },
+            })
             .select("+otp")
-            .sort({ createdAt: -1 });
+            .populate("captain")
+            .sort({ createdAt: -1 })
+
+        if (!activeRide) {
+            return res.status(200).json({
+                message: "Active ride fetched",
+                activeRide: null,
+            })
+        }
+
+        const rideData = activeRide.toObject()
+
+        if (
+            ["accepted", "arrived"].includes(activeRide.status) &&
+            activeRide.captain?.location?.coordinates?.length === 2 &&
+            activeRide.pickup?.lat &&
+            activeRide.pickup?.lng
+        ) {
+            const captainLng = activeRide.captain.location.coordinates[0]
+            const captainLat = activeRide.captain.location.coordinates[1]
+
+            const mode = getRouteMode(activeRide.vehicle?.type)
+
+            const routeData = await getDistanceTimeService({
+                pickupLat: captainLat,
+                pickupLng: captainLng,
+                destinationLat: activeRide.pickup.lat,
+                destinationLng: activeRide.pickup.lng,
+                mode,
+            })
+
+            rideData.captainToPickupRoute = routeData.routeCoordinates
+            rideData.captainToPickupInfo = {
+                distanceKm: routeData.distanceKm,
+                durationMin: routeData.durationMin,
+            }
+        }
 
         return res.status(200).json({
             message: "Active ride fetched",
-            activeRide: activeRide || null,
-        });
+            activeRide: rideData,
+        })
     } catch (error) {
         return res.status(500).json({
             message: "Failed to fetch active ride",
             error: error.message,
-        });
+        })
     }
 }
 
@@ -165,7 +220,7 @@ export const acceptRideController = async (req, res) => {
         const captainId = req.captainId
         const { rideId } = req.params
 
-        const otp = Math.floor(1000 + Math.random() * 9000).toString()
+        
 
         const ride = await rideModel.findOneAndUpdate(
             {
@@ -179,7 +234,6 @@ export const acceptRideController = async (req, res) => {
                     status: "accepted",
                     acceptedAt: new Date(),
                     expiresAt: null,
-                    otp
                 },
             },
             {
@@ -202,7 +256,7 @@ export const acceptRideController = async (req, res) => {
             },
         })
 
-        const populatedRide = await rideModel.findById(ride._id).populate("captain")
+        const populatedRide = await rideModel.findById(ride._id).populate("captain").select("+otp")
 
         sendRideAcceptedToUser(populatedRide.rider, populatedRide)
 
@@ -217,6 +271,167 @@ export const acceptRideController = async (req, res) => {
         console.log(error)
         return res.status(500).json({
             message: "Failed to accept ride",
+        })
+    }
+}
+
+export const startRideController = async (req, res) => {
+    try {
+        const captainId = req.captainId
+        const { rideId } = req.params
+        const { otp } = req.body
+
+        if (!otp) {
+            return res.status(400).json({
+                message: "OTP is required",
+            })
+        }
+
+        const ride = await rideModel.findOne({
+                _id: rideId,
+                captain: captainId,
+                status: {
+                    $in: ["accepted", "arrived"],
+                },
+            })
+            .select("+otp")
+
+        if (!ride) {
+            return res.status(400).json({
+                message: "Ride not found or not ready to start",
+            })
+        }
+
+        if (ride.otp !== otp.toString()) {
+            return res.status(400).json({
+                message: "Invalid OTP",
+            })
+        }
+
+        ride.status = "started"
+        ride.startedAt = new Date()
+        ride.otp = ""
+
+        if (!ride.arrivedAt) {
+            ride.arrivedAt = new Date()
+        }
+
+        await ride.save()
+
+        const startedRide = await rideModel.findById(ride._id)
+            .populate("rider", "fullname phone")
+            .populate("captain", "fullname phone vehicle location")
+
+        sendRideStartedToUser(startedRide.rider._id, startedRide)
+
+        return res.status(200).json({
+            message: "Ride started successfully",
+            ride: startedRide,
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Failed to start ride",
+        })
+    }
+}
+
+export const getCaptainToDestinationRouteController = async (req, res) => {
+    try {
+        const captainId = req.captainId
+
+        const {
+            currentLat,
+            currentLng,
+            destinationLat,
+            destinationLng,
+            vehicleType,
+        } = req.query
+
+        if (!currentLat || !currentLng || !destinationLat || !destinationLng) {
+            return res.status(400).json({
+                message: "Current location and destination location are required",
+            })
+        }
+
+        await captainModel.findByIdAndUpdate(captainId, {
+            $set: {
+                location: {
+                    type: "Point",
+                    coordinates: [Number(currentLng), Number(currentLat)],
+                },
+            },
+        })
+
+        const routeData = await getDistanceTimeService({
+            pickupLat: currentLat,
+            pickupLng: currentLng,
+            destinationLat,
+            destinationLng,
+            mode : getRouteMode(vehicleType),
+        })
+
+        return res.status(200).json({
+            message: "Captain destination route fetched successfully",
+            distanceKm: routeData.distanceKm,
+            durationMin: routeData.durationMin,
+            routeCoordinates: routeData.routeCoordinates,
+            instructions: routeData.instructions || [],
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        })
+    }
+}
+
+export const completeRideController = async (req, res) => {
+    try {
+        const captainId = req.captainId
+        const { rideId } = req.params
+
+        const ride = await rideModel.findOne({
+            _id: rideId,
+            captain: captainId,
+            status: "started",
+        })
+
+        if (!ride) {
+            return res.status(400).json({
+                message: "Ride not found or not started",
+            })
+        }
+
+        ride.status = "completed"
+        ride.completedAt = new Date()
+        ride.paymentStatus = "paid"
+
+        await ride.save()
+
+        await captainModel.findByIdAndUpdate(captainId, {
+            $set: {
+                currentRide: null,
+            },
+            $inc: {
+                totalRides: 1,
+            },
+        })
+
+        const completedRide = await rideModel.findById(ride._id).populate("rider")
+
+        sendRideCompletedToUser(completedRide.rider._id, completedRide)
+
+        return res.status(200).json({
+            message: "Ride completed successfully",
+            ride: completedRide,
+        })
+
+    } catch (error) {
+        console.log(error)
+
+        return res.status(500).json({
+            message: "Failed to complete ride",
         })
     }
 }

@@ -44,7 +44,7 @@ export const useCaptainSocket = ({ setRequests, setStage }) => {
 
 
     socket.on("ride-accepted", ({ ride }) => {
-      console.log("Ride accepted:", ride)
+
 
       setRideData((prev) => ({
         ...prev,
@@ -53,7 +53,9 @@ export const useCaptainSocket = ({ setRequests, setStage }) => {
 
       setStage("waiting")
     })
-    
+
+   
+
   }, [])
 
   return { socketstate };

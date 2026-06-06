@@ -24,9 +24,10 @@ export const getCaptainActiveRideService = async () => {
     return res.data.activeRide
 }
 
-export const getCaptainToPickupRouteService = async ({currentLat,currentLng,pickupLat,pickupLng,vehicleType,}) => {
+export const getCaptainToPickupRouteService = async ({ rideId,currentLat,currentLng,pickupLat,pickupLng,vehicleType,}) => {
     const res = await axios.get(`${BASE_URL}/api/map/get-toPickup-route`, {
         params: {
+            rideId,
             currentLat,
             currentLng,
             pickupLat,
@@ -38,3 +39,41 @@ export const getCaptainToPickupRouteService = async ({currentLat,currentLng,pick
 
     return res.data
 }
+
+export const startRideService = async ({ rideId, otp }) => {
+    const res = await axios.post(
+        `${BASE_URL}/api/ride/start/${rideId}`,
+        { otp },
+        {
+            withCredentials: true,
+        }
+    )
+
+    return res.data
+}
+
+export const getCaptainToDestinationRouteService = async ({currentLat,currentLng,destinationLat,destinationLng,vehicleType}) => {
+    const res = await axios.get(`${BASE_URL}/api/map/get-toDestination-route`, {
+        params: {
+            currentLat,
+            currentLng,
+            destinationLat,
+            destinationLng,
+            vehicleType,
+        },
+        withCredentials: true,
+    })
+
+    return res.data
+}
+
+export const completeRideService = async (rideId) => {
+    const res = await axios.post(`${BASE_URL}/api/ride/complete/${rideId}`,{},
+        {
+            withCredentials: true,
+        }
+    )
+
+    return res.data
+}
+

@@ -27,12 +27,53 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
     })
 
     socket.on("ride-accepted", ({ ride }) => {
-  
+      console.log("Ride accepted:", ride)
+
       setRideData((prev) => ({
         ...prev,
         ...ride,
 
-        rideId: ride._id,
+        vehicle: {
+          ...prev.vehicle,
+          ...ride.vehicle,
+        },
+
+      }))
+
+      setStage("waiting")
+    })
+
+    socket.on("captain-location-updated", ({ rideId, lat, lng, distanceKm, durationMin, routeCoordinates, }) => {
+
+      setRideData((prev) => {
+        if (prev._id !== rideId) return prev
+
+        return {
+          ...prev,
+
+          captain: {
+            ...prev.captain,
+            location: {
+              type: "Point",
+              coordinates: [Number(lng), Number(lat)],
+            },
+          },
+
+          captainToPickupRoute: routeCoordinates || [],
+
+          captainToPickupInfo: {
+            distanceKm: distanceKm || 0,
+            durationMin: durationMin || 0,
+          },
+        }
+      })
+    })
+
+    socket.on("ride-started", ({ ride }) => {
+
+      setRideData((prev) => ({
+        ...prev,
+        ...ride,
 
         vehicle: {
           ...prev.vehicle,
@@ -40,9 +81,65 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
         },
       }))
 
-      setStage("waiting")
+      setStage("riding")
     })
 
+    socket.on("ride-completed", ({ ride }) => {
+      console.log("Ride completed:", ride)
+
+      setRideData((prev) => ({
+        ...prev,
+
+        _id: "",
+        rider: null,
+        captain: null,
+
+        pickup: {
+          address: "",
+          lat: null,
+          lng: null,
+        },
+
+        destination: {
+          address: "",
+          lat: null,
+          lng: null,
+        },
+
+        distanceKm: 0,
+        durationMin: 0,
+
+        vehicle: {
+          type: "",
+          name: "",
+          image: "",
+          capacity: 1,
+        },
+
+        fare: 0,
+
+        paymentMethod: "cash",
+        paymentStatus: "pending",
+
+        status: "",
+
+        otp: "",
+
+        acceptedAt: null,
+        arrivedAt: null,
+        startedAt: null,
+        completedAt: null,
+        cancelledAt: null,
+
+        captainToPickupRoute: [],
+        captainToPickupInfo: {
+          distanceKm: 0,
+          durationMin: 0,
+        },
+      }))
+
+      setStage("location")
+    })
 
 
     return () => {
@@ -52,3 +149,4 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
 
   return { socketstate }
 };
+

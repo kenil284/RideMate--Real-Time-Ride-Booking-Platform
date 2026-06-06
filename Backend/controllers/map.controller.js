@@ -1,5 +1,7 @@
 import captainModel from "../models/captian.model.js"
 import { getDistanceTimeService } from "../services/maps.service.js"
+import { sendCaptainLocationToRider } from "../socket/socket.emit.js"
+import rideModel from "../Models/ride.model.js";
 
 
 const getRouteMode = (vehicleType) => {
@@ -19,6 +21,7 @@ export const getCaptainToPickupRouteController = async (req, res) => {
         const captainId = req.captainId
 
         const {
+            rideId,
             currentLat,
             currentLng,
             pickupLat,
@@ -51,11 +54,40 @@ export const getCaptainToPickupRouteController = async (req, res) => {
             mode,
         })
 
+        if (rideId) {
+            const ride = await rideModel.findOne({
+                _id: rideId,
+                captain: captainId,
+                status: {
+                    $in: ["accepted", "arrived", "started"],
+                },
+            })
+                .select("rider")
+
+
+
+            if (ride) {
+                sendCaptainLocationToRider({
+                    riderId: ride.rider,
+                    rideId: ride._id,
+                    lat: currentLat,
+                    lng: currentLng,
+                    distanceKm: routeData.distanceKm,
+                    durationMin: routeData.durationMin,
+                    routeCoordinates: routeData.routeCoordinates,
+                    
+                })
+            }
+        }
+
+
+
         return res.status(200).json({
             message: "Captain pickup route fetched successfully",
             distanceKm: routeData.distanceKm,
             durationMin: routeData.durationMin,
             routeCoordinates: routeData.routeCoordinates,
+            instructions: routeData.instructions,
         })
     } catch (error) {
         return res.status(500).json({
