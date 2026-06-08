@@ -152,11 +152,11 @@ export const logoutUserController = async (req, res) => {
 
     
     const accessToken =
-      req.cookies?.accessToken ||
+      req.cookies?.userAccessToken ||
       req.headers.authorization?.split(" ")[1];
 
     const refreshToken =
-      req.cookies?.refreshToken ||
+      req.cookies?.userRefreshToken ||
       req.body.refreshToken;
 
 
@@ -168,8 +168,8 @@ export const logoutUserController = async (req, res) => {
       await refreshTokenModel.deleteOne({ token: refreshToken });
     }
 
-    res.clearCookie("accessToken", cookieOptions);
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("userAccessToken", cookieOptions);
+    res.clearCookie("userRefreshToken", cookieOptions);
 
     return res.status(200).json({
       message: "Logout successful",

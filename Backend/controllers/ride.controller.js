@@ -256,9 +256,9 @@ export const acceptRideController = async (req, res) => {
             },
         })
 
-        const populatedRide = await rideModel.findById(ride._id).populate("captain").select("+otp")
+        const populatedRide = await rideModel.findById(ride._id).populate("captain").populate("rider").select("+otp")
 
-        sendRideAcceptedToUser(populatedRide.rider, populatedRide)
+        sendRideAcceptedToUser(populatedRide.rider._id, populatedRide)
 
         removeRideRequestFromCaptains(populatedRide._id)
 

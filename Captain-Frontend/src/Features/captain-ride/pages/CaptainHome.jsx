@@ -19,12 +19,15 @@ import CaptainOtpBox from "../component/CaptainOtpBox";
 import ActiveRideHeader from "../component/ActiveRideHeader";
 import { useCaptainDestinationRoute } from "../hooks/useCaptainDestinationRoute";
 import NavigatingRide from "../component/NavigatingRide";
-;
+import { useNavigate } from "react-router-dom"
+import { logout } from "../../auth/services/auth.api";
+import { stopRideRequestSound } from "../services/notificationSound.service";
 
 
 const CaptainHome = () => {
 
-    const { setCaptainData, captainData, openalert } = useContext(captainContext);
+    const { setCaptainData, setCaptainLogin, captainData, openalert } = useContext(captainContext);
+    const navigate = useNavigate()
 
     const [requests, setRequests] = useState([]);
     const [acceptedRide, setAcceptedRide] = useState(null)
@@ -82,6 +85,7 @@ const CaptainHome = () => {
 
 
     const [stage, setStage] = useState("looking");
+    const [isStartingRide, setIsStartingRide] = useState(false)
 
     useCaptainActiveRide({ setCurrentRide, setStage })
 
@@ -113,6 +117,24 @@ const CaptainHome = () => {
         currentRide,
     })
 
+    const handleLogout = async () => {
+        try {
+            await logout()
+
+            setCaptainData(null)
+            setCaptainLogin(false)
+
+            openalert("Success", "Logout successfully")
+
+            navigate("/login")
+        } catch (error) {
+            setCaptainData(null)
+            setCaptainLogin(false)
+
+            navigate("/login")
+        }
+    }
+
     const handleAcceptRide = async (ride) => {
         try {
             const data = await acceptRideService(ride._id)
@@ -120,6 +142,8 @@ const CaptainHome = () => {
             setCurrentRide(data.ride)
             setRequests([])
             setStage("accepted")
+
+            stopRideRequestSound()
 
             setCaptainData((prev) => ({
                 ...prev,
@@ -137,19 +161,25 @@ const CaptainHome = () => {
 
     const onStartRide = async (otp) => {
         try {
+            setIsStartingRide(true)
+
             const data = await startRideService({
                 rideId: currentRide._id,
                 otp,
             })
+
             openalert("Success", data.message)
 
             setCurrentRide(data.ride)
             setStage("navigating")
         } catch (error) {
+        
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to start ride"
             )
+        } finally {
+            setIsStartingRide(false)
         }
     }
 
@@ -162,6 +192,8 @@ const CaptainHome = () => {
         setRequests((prev) => {
             const updatedRequests = prev.filter((item) => item._id !== ride._id)
 
+            stopRideRequestSound()
+
             if (updatedRequests.length === 0) {
                 setStage("looking")
             }
@@ -172,28 +204,28 @@ const CaptainHome = () => {
 
 
     const handleCurrentCancelRide = async () => {
-    try {
-        const rideId = currentRide?._id
+        try {
+            const rideId = currentRide?._id
 
-        if (!rideId) return
+            if (!rideId) return
 
-        const data = await cancelRideByCaptainService({
-            rideId
-        })
+            const data = await cancelRideByCaptainService({
+                rideId
+            })
 
-        setCurrentRide(null)
-        setStage("looking")
+            setCurrentRide(null)
+            setStage("looking")
 
-        openalert("Success", data?.message || "Ride cancelled successfully")
+            openalert("Success", data?.message || "Ride cancelled successfully")
 
-    } catch (error) {
-         console.log(error)
-        openalert(
-            "Error",
-            error.response?.data?.message || "Failed to cancel ride"
-        )
+        } catch (error) {
+            console.log(error)
+            openalert(
+                "Error",
+                error.response?.data?.message || "Failed to cancel ride"
+            )
+        }
     }
-}
 
     // useEffect(() => {
     //     console.log("Captain current location:", captainCurrentLocation)
@@ -227,7 +259,7 @@ const CaptainHome = () => {
 
     const handleCompleteRide = async () => {
         try {
-            
+
             const data = await completeRideService(currentRide._id)
 
             setCurrentRide(null)
@@ -239,7 +271,7 @@ const CaptainHome = () => {
                 totalRides: (prev.totalRides || 0) + 1,
             }))
 
-           
+
 
             openalert("Success", data.message || "Ride completed successfully")
 
@@ -281,6 +313,7 @@ const CaptainHome = () => {
                     isUpdating={isUpdating}
                     onToggle={toggleAvailability}
                     isAvailabilityDisabled={isAvailabilityDisabled}
+                    onLogout={handleLogout}
                 />
             )}
 
@@ -318,6 +351,7 @@ const CaptainHome = () => {
                         ride={currentRide}
                         onBack={() => setStage("accepted")}
                         onStartRide={onStartRide}
+                        isStartingRide={isStartingRide}
                     />
                 )}
 

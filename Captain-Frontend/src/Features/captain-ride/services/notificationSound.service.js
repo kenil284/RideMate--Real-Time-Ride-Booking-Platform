@@ -59,3 +59,16 @@ export const playRideRequestSound = async () => {
     console.log("Sound play failed:", error.message);
   }
 };
+
+export const stopRideRequestSound = () => {
+  if (!notificationAudio) return
+
+  notificationAudio.pause()
+  notificationAudio.currentTime = 0
+
+  if (navigator.vibrate) {
+    navigator.vibrate(0)
+  }
+
+  console.log("Ride request sound stopped")
+}

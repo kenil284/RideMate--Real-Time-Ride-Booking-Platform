@@ -14,7 +14,7 @@ const CaptainRegister = () => {
     const [vehicleCapacity, setVehicleCapacity] = useState("");
     const [vehicleType, setVehicleType] = useState("car");
 
-    const { handleRegister } = useAuth();
+    const { handleRegister, isRegistering } = useAuth();
 
     const history = useNavigate();
 
@@ -222,9 +222,23 @@ const CaptainRegister = () => {
 
                         <button
                             type="submit"
-                            className="w-full mt-5 h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97]"
+                            disabled={isRegistering}
+                            className={`
+    w-full mt-5 h-[52px] rounded-lg font-semibold text-[16px] transition-all duration-150 flex items-center justify-center gap-2
+    ${isRegistering
+                                    ? "bg-black/80 text-white cursor-not-allowed"
+                                    : "bg-black text-white hover:bg-[#222] active:scale-[0.97]"
+                                }
+  `}
                         >
-                            Create captain account
+                            {isRegistering ? (
+                                <>
+                                    <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                                    Creating account...
+                                </>
+                            ) : (
+                                "Create captain account"
+                            )}
                         </button>
                     </form>
 

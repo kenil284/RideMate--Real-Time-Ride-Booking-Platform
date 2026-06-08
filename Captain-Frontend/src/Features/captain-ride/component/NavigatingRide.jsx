@@ -1,5 +1,5 @@
 import React from "react"
-import { FaFlagCheckered, FaMoneyBillWave } from "react-icons/fa6"
+import { FaFlagCheckered, FaLocationArrow } from "react-icons/fa6"
 
 const NavigatingRide = ({ ride, onComplete }) => {
   const fareText = ride?.vehicle?.displayFare || `₹${ride?.fare || 0}`
@@ -8,46 +8,52 @@ const NavigatingRide = ({ ride, onComplete }) => {
     ride?.paymentMethod === "online" ? "Online" : "Cash"
 
   return (
-    <div className="h-full flex items-center gap-3 px-4">
-      <div className="flex-1 min-w-0">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 mb-2">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-
-          <p className="text-[11px] font-bold text-gray-500">
-            Trip in progress
-          </p>
+    <div className="w-full px-1">
+      <div className="mb-2 flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-gray-950 text-white flex items-center justify-center shrink-0">
+          <FaLocationArrow className="text-[11px]" />
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="px-4 py-2.5 rounded-2xl bg-gray-950 text-white shadow-[0_10px_25px_rgba(0,0,0,0.18)]">
-            <p className="text-[10px] font-bold text-white/50 uppercase leading-none">
-              Fare
-            </p>
+        <div className="min-w-0">
+          <p className="text-[11px] font-extrabold text-gray-400 uppercase leading-none">
+            Trip in progress
+          </p>
 
-            <h3 className="text-[18px] font-extrabold mt-1 leading-none">
-              {fareText}
-            </h3>
-          </div>
-
-          <div className="px-4 py-2.5 rounded-2xl bg-gray-100">
-            <p className="text-[10px] font-bold text-gray-400 uppercase leading-none">
-              Payment
-            </p>
-
-            <h3 className="text-[14px] font-extrabold text-gray-900 mt-1 leading-none capitalize">
-              {paymentText}
-            </h3>
-          </div>
+          <h3 className="text-[15px] font-extrabold text-gray-950 leading-tight mt-1 truncate">
+            Continue to destination
+          </h3>
         </div>
       </div>
 
-      <button
-        onClick={onComplete}
-        className="h-14 px-6 rounded-[22px] bg-gray-950 text-white text-[14px] font-extrabold flex items-center justify-center gap-2 shadow-[0_14px_35px_rgba(0,0,0,0.28)] active:scale-95 transition shrink-0"
-      >
-        <FaFlagCheckered className="text-xs" />
-        Complete
-      </button>
+      <div className="h-[58px] w-full rounded-[15px] bg-gray-100/90 p-1.5 flex items-center gap-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.08)]">
+        <div className="h-full min-w-[76px] rounded-[15px] bg-gray-950 text-white flex flex-col justify-center px-4">
+          <span className="text-[9px] font-extrabold text-white/45 uppercase leading-none">
+            Fare
+          </span>
+
+          <span className="text-[17px] font-extrabold leading-none mt-1">
+            {fareText}
+          </span>
+        </div>
+
+        <div className="h-full min-w-[82px] rounded-[15px] bg-white flex flex-col justify-center px-4 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.03)]">
+          <span className="text-[9px] font-extrabold text-gray-400 uppercase leading-none">
+            Payment
+          </span>
+
+          <span className="text-[14px] font-extrabold text-gray-950 leading-none mt-1 capitalize">
+            {paymentText}
+          </span>
+        </div>
+
+        <button
+          onClick={onComplete}
+          className="h-full flex-1 rounded-[15px] bg-gray-950 text-white text-[14px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] transition shadow-[0_14px_28px_rgba(0,0,0,0.25)]"
+        >
+          <FaFlagCheckered className="text-xs" />
+          Complete
+        </button>
+      </div>
     </div>
   )
 }

@@ -19,11 +19,14 @@ import { useRiderSocket } from "../Hooks/useRiderSocket";
 import RideStarted from "../component/RideStarted";
 import { userContext } from "../../../Context/UserContextProvider";
 import { cancelRideByUserService } from "../Service/ride.api";
+import { logout } from "../../auth/Service/auth.api";
+import { IoMenu } from "react-icons/io5";
 
 const Ride = () => {
     const [stage, setStage] = useState("loading");
     const [activeField, setActiveField] = useState("pickup");
-    const { openalert } = useContext(userContext)
+    const { userData,openalert, setuserData, setLogin } = useContext(userContext)
+    const [isMenuOpen, setIsMenuOpen] = useState(false)
 
     // const [rideData, setRideData] = useState({
     //     rideId: "",
@@ -180,6 +183,24 @@ const Ride = () => {
 
         checkActiveRide()
     }, [])
+
+    const handleLogout = async () => {
+        try {
+            await logout()
+
+            setuserData(null)
+            setLogin(false)
+
+            openalert("Success", "Logout successfully")
+
+            navigate("/login")
+        } catch (error) {
+            setuserData(null)
+            setLogin(false)
+
+            navigate("/login")
+        }
+    }
 
     const updateLocationText = (field, value) => {
         setRideData((prev) => ({
@@ -367,14 +388,14 @@ const Ride = () => {
                     showVehicleMarker={isCaptainTracking}
                 />
             </div>
-
+        
             {/* Small top gradient */}
             <div className="fixed top-0 left-0 right-0 z-[9999] h-[125px] bg-gradient-to-b from-white/85 via-white/35 to-transparent px-4 pt-4 pointer-events-none">
                 <div className="max-w-[430px] mx-auto pointer-events-auto">
                     <div className="rounded-[30px] bg-[#111217]/95 text-white shadow-[0_20px_55px_rgba(0,0,0,0.32)] border border-white/10 backdrop-blur-xl px-3 py-3">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-[20px] bg-white text-gray-950 flex items-center justify-center font-extrabold text-base shrink-0">
-                                {"Tirth".charAt(0).toUpperCase()}
+                                {userData.fullname?.firstname?.charAt(0).toUpperCase()}
                             </div>
 
                             <div className="flex-1 min-w-0">
@@ -383,7 +404,7 @@ const Ride = () => {
                                 </p>
 
                                 <h1 className="text-[17px] font-extrabold text-white leading-tight truncate mt-0.5">
-                                    {"Tirth"} 👋
+                                    {userData.fullname?.firstname} 👋
                                 </h1>
 
                                 <p className="text-[12px] text-white/55 mt-0.5 truncate">
@@ -391,9 +412,28 @@ const Ride = () => {
                                 </p>
                             </div>
 
-                            <button className="w-12 h-12 rounded-[20px] bg-white/10 text-white flex items-center justify-center text-[24px] active:scale-95 transition shrink-0">
-                                ☰
-                            </button>
+                            <div className="relative shrink-0">
+                                <button
+                                    onClick={() => setIsMenuOpen((prev) => !prev)}
+                                    className="w-12 h-12 rounded-[20px] bg-white/10 text-white flex items-center justify-center text-[24px] active:scale-95 transition"
+                                >
+                                    <IoMenu />
+                                </button>
+
+                                {isMenuOpen && (
+                                    <div className="absolute right-0 top-14 w-40 rounded-2xl bg-white shadow-[0_18px_40px_rgba(0,0,0,0.18)] border border-gray-100 overflow-hidden">
+                                        <button
+                                            onClick={() => {
+                                                setIsMenuOpen(false)
+                                                handleLogout()
+                                            }}
+                                            className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-900 active:bg-gray-100 transition"
+                                        >
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

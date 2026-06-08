@@ -196,7 +196,6 @@ export const loginCaptainController = async (req, res) => {
  */
 export const getCaptainProfileController = async (req, res) => {
     try {
-
         res.status(200).json({
             message: "Captain profile retrieved successfully",
             captain: req.captain,
@@ -215,8 +214,8 @@ export const getCaptainProfileController = async (req, res) => {
  */
 export const logoutCaptainController = async (req, res) => {
     try {
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("captainAccessToken");
+        res.clearCookie("captainRefreshToken");
         res.status(200).json({
             message: "Captain logged out successfully",
         });

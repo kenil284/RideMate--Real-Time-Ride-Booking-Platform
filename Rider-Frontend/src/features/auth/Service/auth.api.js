@@ -30,7 +30,14 @@ export const getUserProfileService = async () => {
 }
 
 export const refreshAccessTokenService = async () => {
-    console.log("Reached")
+    
     const res = await api.post(`/api/user/refresh-token`)
     return res.data
+}
+
+export const logout = async () => {
+    
+    const response = await api.post('/api/user/logout')
+
+    return response.data
 }

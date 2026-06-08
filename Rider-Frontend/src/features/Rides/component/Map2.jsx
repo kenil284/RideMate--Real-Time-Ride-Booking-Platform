@@ -23,7 +23,7 @@ const Map2 = ({
 }) => {
 
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY
- 
+
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
 

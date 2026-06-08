@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link,useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../Hooks/useAuth";
 
 const CaptainLogin = () => {
@@ -8,7 +8,7 @@ const CaptainLogin = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const { handleLogin } = useAuth()
+  const { handleLogin, isloading } = useAuth()
 
   const navigate = useNavigate()
 
@@ -66,9 +66,23 @@ const CaptainLogin = () => {
 
             <button
               type="submit"
-              className="w-full h-[52px] bg-black text-white rounded-lg font-semibold text-[16px] transition-all duration-150 hover:bg-[#222] active:scale-[0.97]"
+              disabled={isloading}
+              className={`
+    w-full h-[52px] rounded-lg font-semibold text-[16px] transition-all duration-150 flex items-center justify-center gap-2
+    ${isloading
+                  ? "bg-black/80 text-white cursor-not-allowed"
+                  : "bg-black text-white hover:bg-[#222] active:scale-[0.97]"
+                }
+  `}
             >
-              Continue
+              {isloading ? (
+                <>
+                  <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                "Log in"
+              )}
             </button>
           </form>
 

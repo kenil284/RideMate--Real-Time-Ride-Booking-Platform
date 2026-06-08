@@ -22,7 +22,7 @@ const BottomSheet = ({ stage, contentKey, children }) => {
 
     const targetHeight =
       stage === "navigating"
-        ? Math.max(window.innerHeight * 0.1, 86)
+        ? Math.max(window.innerHeight * 0.17, 112)
         : content.scrollHeight;
 
     if (isFirstRender.current) {
@@ -51,7 +51,7 @@ const BottomSheet = ({ stage, contentKey, children }) => {
         ref={contentRef}
         className={`
         w-full max-w-[430px] mx-auto px-5 py-4
-        ${stage === "navigating" ? "h-full py-3" : ""}
+        ${stage === "navigating" ? "py-3" : ""}
         ${stage === "accepted" ? "pt-2" : ""}
       `}
       >
