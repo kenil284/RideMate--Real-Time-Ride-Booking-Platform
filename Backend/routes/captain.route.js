@@ -3,6 +3,7 @@ import { getCaptainProfileController, getCaptainTodayDashboardController, loginC
 import { authCaptain, authUser } from "../middlewares/auth.middleware.js";
 
 import { body } from "express-validator";
+import { refreshCaptainAccessTokenController } from "../controllers/auth.controller.js";
 
 const registerCaptainValidation = [
   body("fullname.firstname")
@@ -108,6 +109,9 @@ captainRouter.put("/update-captain-availability",authCaptain,updateCaptainAvalab
  */
 
 captainRouter.put("/update-location",authCaptain,updateCaptainLocationController)
+
+
+captainRouter.post("/refresh-token",refreshCaptainAccessTokenController)
 
 
 

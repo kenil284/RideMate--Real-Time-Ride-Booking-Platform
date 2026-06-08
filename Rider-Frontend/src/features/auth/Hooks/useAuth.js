@@ -4,12 +4,14 @@ import { Login, Register } from "../Service/auth.api"
 
 
 export const useAuth = () => {
-    const {userData,setuserData,login,setLogin,openalert} = useContext(userContext)
+    const {openalert,checkAuth} = useContext(userContext)
 
      const handleLogin = async ({ email, password }) => {
         try {
             const data = await Login({ email, password })
-            setuserData(data.user)
+
+            await checkAuth()
+            
             return data;
         } catch (err) {
             console.log(err)
@@ -20,7 +22,7 @@ export const useAuth = () => {
     const handleRegister = async ({ fullname, email, password, phone }) => {
         try {
             const data = await Register({ fullname, email, password, phone })
-            setuserData(data.user)
+       
             return data;
         } catch (err) {
             console.log(err)

@@ -77,3 +77,14 @@ export const completeRideService = async (rideId) => {
     return res.data
 }
 
+export const cancelRideByCaptainService = async ({ rideId }) => {
+    const res = await axios.post(
+        `${BASE_URL}/api/ride/cancel/captain/${rideId}`,
+        {},
+        {
+            withCredentials: true,
+        }
+    )
+
+    return res.data
+}

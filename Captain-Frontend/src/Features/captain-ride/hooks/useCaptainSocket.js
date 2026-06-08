@@ -1,9 +1,12 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { connectSocket } from "../../../services/socket.service";
 import { playRideRequestSound } from "../services/notificationSound.service";
+import { captainContext } from "../../../Context/CaptainContext";
 
-export const useCaptainSocket = ({ setRequests, setStage }) => {
+export const useCaptainSocket = ({ setCurrentRide,setRequests, setStage }) => {
   const [socketstate, setSocketstate] = useState(null);
+
+  const {openalert} = useContext(captainContext)
 
   useEffect(() => {
     const socket = connectSocket();
@@ -53,6 +56,15 @@ export const useCaptainSocket = ({ setRequests, setStage }) => {
 
       setStage("waiting")
     })
+
+    socket.on("ride-cancelled-by-rider", ({ ride }) => {
+   
+    setCurrentRide(null)
+    setStage("looking")
+    
+
+    openalert("Info", "Rider cancelled the ride")
+})
 
    
 

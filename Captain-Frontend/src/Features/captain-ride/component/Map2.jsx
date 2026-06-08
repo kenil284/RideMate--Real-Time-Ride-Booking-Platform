@@ -23,6 +23,12 @@ const Map2 = ({
   const pickupMarkerRef = useRef(null)
   const routeCoordinatesRef = useRef([])
   const lastVehicleImageRef = useRef("")
+  const fallbackDoneRef = useRef(false)
+  const realLocationFoundRef = useRef(false)
+  const firstRealLocationFlyDoneRef = useRef(false)
+
+  const firstLocationFlyDoneRef = useRef(false)
+  const isMapLoadedRef = useRef(false)
 
   const defaultPosition = {
     lat: 21.1702,
@@ -37,14 +43,20 @@ const Map2 = ({
 
   const getVehicleImage = () => {
     if (vehicleType === "bike") return "/Bike/bike-back.webp"
-    if (vehicleType === "car") return "/car_3d.png"
+    if (vehicleType === "car") return "/Car/car-back.webp"
     if (vehicleType === "auto") return "/Auto.png"
 
     return "/Bike/bike-back.webp"
   }
 
   const preloadVehicleImages = () => {
-    Object.values(BIKE_IMAGES).forEach((src) => {
+    const images = [
+      BIKE_IMAGES.back,
+      "/Car/car-back.webp",
+      "/Auto.png",
+    ]
+
+    images.forEach((src) => {
       const img = new Image()
       img.src = src
     })
@@ -57,11 +69,50 @@ const Map2 = ({
       return [Number(location.lng), Number(location.lat)]
     }
 
-    if (location.type === "Point" && location.coordinates) {
+    if (location.type === "Point" && location.coordinates?.length === 2) {
       return [Number(location.coordinates[0]), Number(location.coordinates[1])]
     }
 
     return null
+  }
+
+  const isValidLngLat = (lngLat) => {
+    if (!lngLat) return false
+
+    const lng = Number(lngLat[0])
+    const lat = Number(lngLat[1])
+
+    return (
+      !isNaN(lng) &&
+      !isNaN(lat) &&
+      lng >= -180 &&
+      lng <= 180 &&
+      lat >= -90 &&
+      lat <= 90
+    )
+  }
+
+  const removePickupMarker = () => {
+    if (!pickupMarkerRef.current) return
+
+    pickupMarkerRef.current.remove()
+    pickupMarkerRef.current = null
+  }
+
+  const clearRoute = (map) => {
+    if (!map) return
+
+    if (map.getLayer("route-line")) {
+      map.removeLayer("route-line")
+    }
+
+    if (map.getSource("route-source")) {
+      map.removeSource("route-source")
+    }
+  }
+
+  const getPointDistance = (point, basePoint) => {
+    return Math.abs(point[0] - basePoint[0]) + Math.abs(point[1] - basePoint[1])
   }
 
   const formatRouteCoordinates = (coordinates) => {
@@ -71,18 +122,45 @@ const Map2 = ({
       ? coordinates.flat()
       : coordinates
 
-    return finalCoordinates
+    const cleanedCoordinates = finalCoordinates
+      .filter((item) => Array.isArray(item) && item.length >= 2)
       .map((item) => [Number(item[0]), Number(item[1])])
-      .filter(([lng, lat]) => {
-        return (
-          !isNaN(lng) &&
-          !isNaN(lat) &&
-          lng >= -180 &&
-          lng <= 180 &&
-          lat >= -90 &&
-          lat <= 90
-        )
+      .filter(([a, b]) => !isNaN(a) && !isNaN(b))
+
+    if (cleanedCoordinates.length < 2) return []
+
+    const basePoints = [[position.lng, position.lat]]
+
+    const pickupLngLat = getLngLat(pickup)
+
+    if (pickupLngLat) {
+      basePoints.push(pickupLngLat)
+    }
+
+    let normalScore = 0
+    let swappedScore = 0
+
+    cleanedCoordinates.slice(0, 8).forEach((point) => {
+      const normalPoint = [point[0], point[1]]
+      const swappedPoint = [point[1], point[0]]
+
+      basePoints.forEach((basePoint) => {
+        normalScore += getPointDistance(normalPoint, basePoint)
+        swappedScore += getPointDistance(swappedPoint, basePoint)
       })
+    })
+
+    const shouldSwap = swappedScore < normalScore
+
+    return cleanedCoordinates
+      .map((point) => {
+        if (shouldSwap) {
+          return [point[1], point[0]]
+        }
+
+        return [point[0], point[1]]
+      })
+      .filter(isValidLngLat)
   }
 
   const getBearingBetweenPoints = (start, end) => {
@@ -107,7 +185,13 @@ const Map2 = ({
   const getNavigationBearing = () => {
     const route = formatRouteCoordinates(routeCoordinatesRef.current)
 
-    if (route.length < 2) return 0
+    if (route.length < 2) {
+      const pickupLngLat = getLngLat(pickup)
+
+      if (!pickupLngLat) return 0
+
+      return getBearingBetweenPoints([position.lng, position.lat], pickupLngLat)
+    }
 
     const captainLngLat = [position.lng, position.lat]
     const pickupLngLat = getLngLat(pickup)
@@ -116,9 +200,7 @@ const Map2 = ({
     let minDistance = Infinity
 
     route.forEach((point, index) => {
-      const distance =
-        Math.abs(point[0] - captainLngLat[0]) +
-        Math.abs(point[1] - captainLngLat[1])
+      const distance = getPointDistance(point, captainLngLat)
 
       if (distance < minDistance) {
         minDistance = distance
@@ -129,6 +211,8 @@ const Map2 = ({
     const currentPoint = route[nearestIndex]
 
     const forwardPoint =
+      route[nearestIndex + 8] ||
+      route[nearestIndex + 7] ||
       route[nearestIndex + 6] ||
       route[nearestIndex + 5] ||
       route[nearestIndex + 4] ||
@@ -137,6 +221,8 @@ const Map2 = ({
       route[nearestIndex + 1]
 
     const backwardPoint =
+      route[nearestIndex - 8] ||
+      route[nearestIndex - 7] ||
       route[nearestIndex - 6] ||
       route[nearestIndex - 5] ||
       route[nearestIndex - 4] ||
@@ -147,13 +233,8 @@ const Map2 = ({
     let nextPoint = forwardPoint || backwardPoint
 
     if (pickupLngLat && forwardPoint && backwardPoint) {
-      const forwardDistanceToPickup =
-        Math.abs(forwardPoint[0] - pickupLngLat[0]) +
-        Math.abs(forwardPoint[1] - pickupLngLat[1])
-
-      const backwardDistanceToPickup =
-        Math.abs(backwardPoint[0] - pickupLngLat[0]) +
-        Math.abs(backwardPoint[1] - pickupLngLat[1])
+      const forwardDistanceToPickup = getPointDistance(forwardPoint, pickupLngLat)
+      const backwardDistanceToPickup = getPointDistance(backwardPoint, pickupLngLat)
 
       nextPoint =
         forwardDistanceToPickup < backwardDistanceToPickup
@@ -166,27 +247,32 @@ const Map2 = ({
     return getBearingBetweenPoints(currentPoint, nextPoint)
   }
 
-  const updateCaptainMarkerStyle = () => {
-    if (!mapRef.current || !captainMarkerRef.current) return
+  const addTransparentMissingImage = (map, id) => {
+    if (id === undefined || id === null) return
 
-    captainMarkerRef.current.setLngLat([position.lng, position.lat])
+    try {
+      if (map.hasImage(id)) return
 
-    const img = captainMarkerRef.current
-      .getElement()
-      .querySelector(".captain-vehicle-img")
-
-    if (!img) return
-
-    const vehicleImage = getVehicleImage()
-
-    if (lastVehicleImageRef.current !== vehicleImage) {
-      img.src = vehicleImage
-      lastVehicleImageRef.current = vehicleImage
+      map.addImage(id, {
+        width: 1,
+        height: 1,
+        data: new Uint8Array([0, 0, 0, 0]),
+      })
+    } catch (error) {
+      // ignore duplicate missing image error
     }
   }
 
+  const handleMissingStyleImages = (map) => {
+    addTransparentMissingImage(map, " ")
+
+    map.on("styleimagemissing", (e) => {
+      addTransparentMissingImage(map, e.id)
+    })
+  }
+
   const add3DBuildings = (map) => {
-    const layers = map.getStyle().layers
+    const layers = map.getStyle()?.layers || []
 
     const labelLayerId = layers.find(
       (layer) =>
@@ -263,6 +349,35 @@ const Map2 = ({
       </div>
     `
 
+    const image = markerElement.querySelector(".captain-vehicle-img")
+
+    if (image) {
+      image.onerror = () => {
+        const fallbackIcon =
+          vehicleType === "car"
+            ? "🚗"
+            : vehicleType === "auto"
+              ? "🛺"
+              : "🏍️"
+
+        markerElement.innerHTML = `
+          <div style="
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+          ">
+            ${fallbackIcon}
+          </div>
+        `
+      }
+    }
+
     captainMarkerRef.current = new maplibregl.Marker({
       element: markerElement,
       anchor: "center",
@@ -271,6 +386,34 @@ const Map2 = ({
     })
       .setLngLat(lngLat)
       .addTo(map)
+  }
+
+  const updateCaptainMarkerStyle = () => {
+    if (!mapRef.current) return
+
+    if (!captainMarkerRef.current) {
+      createCaptainMarker(mapRef.current, {
+        lat: position.lat,
+        lng: position.lng,
+      })
+    }
+
+    if (!captainMarkerRef.current) return
+
+    captainMarkerRef.current.setLngLat([position.lng, position.lat])
+
+    const img = captainMarkerRef.current
+      .getElement()
+      .querySelector(".captain-vehicle-img")
+
+    if (!img) return
+
+    const vehicleImage = getVehicleImage()
+
+    if (lastVehicleImageRef.current !== vehicleImage) {
+      img.src = vehicleImage
+      lastVehicleImageRef.current = vehicleImage
+    }
   }
 
   const createPickupMarker = (map, pickupLocation) => {
@@ -318,10 +461,32 @@ const Map2 = ({
       .addTo(map)
   }
 
+  const syncPickupMarker = () => {
+    if (!mapRef.current) return
+
+    const pickupLngLat = getLngLat(pickup)
+
+    if (!pickupLngLat) {
+      removePickupMarker()
+      return
+    }
+
+    if (!pickupMarkerRef.current) {
+      createPickupMarker(mapRef.current, pickup)
+    }
+
+    if (!pickupMarkerRef.current) return
+
+    pickupMarkerRef.current.setLngLat(pickupLngLat)
+  }
+
   const drawRoute = (map, coordinates = routeCoordinatesRef.current) => {
     const finalRoute = formatRouteCoordinates(coordinates)
 
-    if (finalRoute.length < 2) return
+    if (finalRoute.length < 2) {
+      clearRoute(map)
+      return
+    }
 
     const routeData = {
       type: "Feature",
@@ -375,6 +540,48 @@ const Map2 = ({
     })
   }
 
+  const getInitialProvider = () => {
+    const blockedTill = Number(localStorage.getItem("maptilerBlockedTill") || 0)
+
+    if (!mapTilerKey) return "free"
+
+    if (Date.now() < blockedTill) {
+      return "free"
+    }
+
+    return "maptiler"
+  }
+
+  const moveCameraToCaptain = ({ isFirstRealMove = false } = {}) => {
+  if (!mapRef.current) return
+
+  const cameraOptions = {
+    center: [position.lng, position.lat],
+    zoom: 17,
+    pitch: 58,
+    bearing: getNavigationBearing(),
+    offset: [0, 120],
+    essential: true,
+  }
+
+  if (isFirstRealMove) {
+    mapRef.current.flyTo({
+      ...cameraOptions,
+      duration: 2600,
+      speed: 0.55,
+      curve: 1.6,
+    })
+
+    return
+  }
+
+  mapRef.current.easeTo({
+    ...cameraOptions,
+    duration: 900,
+    easing: (t) => 1 - Math.pow(1 - t, 3),
+  })
+}
+
   useEffect(() => {
     preloadVehicleImages()
   }, [])
@@ -384,6 +591,8 @@ const Map2 = ({
 
     if (!captainLngLat) return
 
+    realLocationFoundRef.current = true
+
     setPosition({
       lng: captainLngLat[0],
       lat: captainLngLat[1],
@@ -391,94 +600,145 @@ const Map2 = ({
   }, [currentLocation])
 
   useEffect(() => {
-    if (!navigator.geolocation) return
+  if (!navigator.geolocation) return
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (currentLocation) return
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (currentLocation) return
 
-        setPosition({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        })
-      },
-      (err) => {
-        console.log("Location error:", err.message)
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-      }
-    )
-  }, [])
+      realLocationFoundRef.current = true
+
+      setPosition({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      })
+    },
+    (err) => {
+      console.log("Location error:", err.message)
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000,
+    }
+  )
+}, [])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
-    const mapStyle = mapTilerKey
-      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`
-      : "https://tiles.openfreemap.org/styles/liberty"
+    const MAP_STYLES = {
+      // Primary map style.
+      // This uses your MapTiler key and gives a more polished modern map.
+      maptiler: `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`,
 
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: mapStyle,
-      center: [position.lng, position.lat],
-      zoom: 16.5,
-      pitch: 55,
-      bearing: 0,
-      dragRotate: false,
-      touchPitch: false,
-      antialias: true,
-      attributionControl: false,
-    })
+      // Backup free map style.
+      // If MapTiler key is missing, limit is reached, or API gives 401/403/429,
+      // we automatically switch to this OpenFreeMap style.
+      free: "https://tiles.openfreemap.org/styles/liberty",
+    }
 
-    mapRef.current = map
+    const createMap = (provider) => {
+      const map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: MAP_STYLES[provider],
+        center: [position.lng, position.lat],
+        zoom: 17,
+        pitch: 58,
+        bearing: getNavigationBearing(),
+        dragRotate: false,
+        touchPitch: false,
+        antialias: true,
+        attributionControl: false,
+      })
 
-    map.dragRotate.disable()
-    map.touchZoomRotate.disableRotation()
+      mapRef.current = map
 
-    map.on("load", () => {
-      add3DBuildings(map)
-      createCaptainMarker(map, position)
-      createPickupMarker(map, pickup)
-      drawRoute(map, routeCoordinatesRef.current)
-      updateCaptainMarkerStyle()
-    })
+      map.dragRotate.disable()
+      map.touchZoomRotate.disableRotation()
+
+      handleMissingStyleImages(map)
+
+      map.on("load", () => {
+        isMapLoadedRef.current = true
+
+        add3DBuildings(map)
+        updateCaptainMarkerStyle()
+        syncPickupMarker()
+        drawRoute(map, routeCoordinatesRef.current)
+      })
+
+      map.on("error", (e) => {
+        const message = e?.error?.message || ""
+
+        const shouldFallback =
+          provider === "maptiler" &&
+          !fallbackDoneRef.current &&
+          (
+            message.includes("401") ||
+            message.includes("403") ||
+            message.includes("429") ||
+            message.toLowerCase().includes("quota") ||
+            message.toLowerCase().includes("limit") ||
+            message.toLowerCase().includes("key") ||
+            message.toLowerCase().includes("unauthorized")
+          )
+
+        if (!shouldFallback) return
+
+        fallbackDoneRef.current = true
+
+        // MapTiler failed, so block MapTiler for 24 hours.
+        // This avoids repeated failed requests on every reload.
+        localStorage.setItem(
+          "maptilerBlockedTill",
+          String(Date.now() + 24 * 60 * 60 * 1000)
+        )
+
+        isMapLoadedRef.current = false
+
+        map.remove()
+        mapRef.current = null
+        captainMarkerRef.current = null
+        pickupMarkerRef.current = null
+
+        createMap("free")
+      })
+    }
+
+    createMap(getInitialProvider())
 
     return () => {
-      map.remove()
-      mapRef.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        captainMarkerRef.current = null
+        pickupMarkerRef.current = null
+        isMapLoadedRef.current = false
+      }
     }
   }, [])
+
+useEffect(() => {
+  if (!mapRef.current) return
+
+  mapRef.current.flyTo({
+    center: [position.lng, position.lat],
+    zoom: 17,
+    pitch: 60,
+    bearing: getNavigationBearing(),
+    offset: [0, 120],
+    speed: 1.2,
+    curve: 1,
+  })
+
+  updateCaptainMarkerStyle()
+}, [position])
 
   useEffect(() => {
     if (!mapRef.current) return
 
-    mapRef.current.flyTo({
-      center: [position.lng, position.lat],
-      zoom: 17,
-      pitch: 60,
-      bearing: getNavigationBearing(),
-      offset: [0, 120],
-      speed: 1.2,
-    })
-
-    updateCaptainMarkerStyle()
-  }, [position])
-
-  useEffect(() => {
-    if (!mapRef.current || !pickup) return
-
-    const pickupLngLat = getLngLat(pickup)
-
-    if (!pickupLngLat) return
-
-    if (pickupMarkerRef.current) {
-      pickupMarkerRef.current.setLngLat(pickupLngLat)
-    } else {
-      createPickupMarker(mapRef.current, pickup)
-    }
-
+    syncPickupMarker()
     updateCaptainMarkerStyle()
   }, [pickup])
 
@@ -493,7 +753,13 @@ const Map2 = ({
 
     const updateRouteOnMap = () => {
       drawRoute(map, routeCoordinatesRef.current)
+
+      if (firstLocationFlyDoneRef.current) {
+        moveCameraToCaptain()
+      }
+
       updateCaptainMarkerStyle()
+      syncPickupMarker()
     }
 
     if (map.isStyleLoaded()) {

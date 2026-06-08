@@ -9,20 +9,28 @@ const BIKE_IMAGES = {
   back: "/Bike/bike-back.webp",
 }
 
+const VEHICLE_IMAGES = {
+  car: "/Home_Page/car_3d.png",
+  auto: "/Home_Page/Auto.png",
+}
+
 const Map2 = ({
   routeCoordinates = [],
   currentLocation = null,
   pickup = null,
   vehicleType = "bike",
-  showVehicleMarker = false,
+  showVehicleMarker = true,
 }) => {
-  const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY
 
+  const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY
+ 
   const mapContainer = useRef(null)
   const mapRef = useRef(null)
+
   const vehicleMarkerRef = useRef(null)
   const userMarkerRef = useRef(null)
-  const pickupMarkerRef = useRef(null)
+  const targetMarkerRef = useRef(null)
+
   const routeCoordinatesRef = useRef([])
   const lastVehicleImageRef = useRef("")
 
@@ -37,17 +45,8 @@ const Map2 = ({
     routeCoordinatesRef.current = routeCoordinates || []
   }, [routeCoordinates])
 
-  const preloadVehicleImages = () => {
-    Object.values(BIKE_IMAGES).forEach((src) => {
-      const img = new Image()
-      img.src = src
-    })
-
-    const car = new Image()
-    car.src = "/Home_Page/car_3d.png"
-
-    const auto = new Image()
-    auto.src = "/Auto.png"
+  const getFinalVehicleType = () => {
+    return vehicleType?.toLowerCase() || "bike"
   }
 
   const getLngLat = (location) => {
@@ -57,32 +56,92 @@ const Map2 = ({
       return [Number(location.lng), Number(location.lat)]
     }
 
-    if (location.type === "Point" && location.coordinates) {
+    if (location.type === "Point" && location.coordinates?.length === 2) {
       return [Number(location.coordinates[0]), Number(location.coordinates[1])]
     }
 
     return null
   }
 
+  const isValidLngLat = (lngLat) => {
+    if (!lngLat) return false
+
+    const lng = Number(lngLat[0])
+    const lat = Number(lngLat[1])
+
+    return (
+      !isNaN(lng) &&
+      !isNaN(lat) &&
+      lng >= -180 &&
+      lng <= 180 &&
+      lat >= -90 &&
+      lat <= 90
+    )
+  }
+
+  const getPointScore = (point, basePoints) => {
+    if (!basePoints.length) return 0
+
+    let minDistance = Infinity
+
+    basePoints.forEach((base) => {
+      const distance =
+        Math.abs(point[0] - base[0]) + Math.abs(point[1] - base[1])
+
+      if (distance < minDistance) {
+        minDistance = distance
+      }
+    })
+
+    return minDistance
+  }
+
   const formatRouteCoordinates = (coordinates) => {
     if (!Array.isArray(coordinates)) return []
 
-    const finalCoordinates = Array.isArray(coordinates[0]?.[0])
+    const flatCoordinates = Array.isArray(coordinates[0]?.[0])
       ? coordinates.flat()
       : coordinates
 
-    return finalCoordinates
+    const cleanCoordinates = flatCoordinates
+      .filter((item) => Array.isArray(item) && item.length >= 2)
       .map((item) => [Number(item[0]), Number(item[1])])
-      .filter(([lng, lat]) => {
-        return (
-          !isNaN(lng) &&
-          !isNaN(lat) &&
-          lng >= -180 &&
-          lng <= 180 &&
-          lat >= -90 &&
-          lat <= 90
-        )
+      .filter((item) => !isNaN(item[0]) && !isNaN(item[1]))
+
+    if (cleanCoordinates.length < 2) return []
+
+    const basePoints = []
+
+    basePoints.push([position.lng, position.lat])
+
+    const targetLngLat = getLngLat(pickup)
+
+    if (targetLngLat) {
+      basePoints.push(targetLngLat)
+    }
+
+    let normalScore = 0
+    let swappedScore = 0
+
+    cleanCoordinates.slice(0, 8).forEach((point) => {
+      const normalPoint = [point[0], point[1]]
+      const swappedPoint = [point[1], point[0]]
+
+      normalScore += getPointScore(normalPoint, basePoints)
+      swappedScore += getPointScore(swappedPoint, basePoints)
+    })
+
+    const shouldSwap = swappedScore < normalScore
+
+    return cleanCoordinates
+      .map((point) => {
+        if (shouldSwap) {
+          return [point[1], point[0]]
+        }
+
+        return [point[0], point[1]]
       })
+      .filter(isValidLngLat)
   }
 
   const getBearingBetweenPoints = (start, end) => {
@@ -107,18 +166,24 @@ const Map2 = ({
   const getNavigationBearing = () => {
     const route = formatRouteCoordinates(routeCoordinatesRef.current)
 
-    if (route.length < 2) return 0
+    if (route.length < 2) {
+      const targetLngLat = getLngLat(pickup)
 
-    const captainLngLat = [position.lng, position.lat]
-    const pickupLngLat = getLngLat(pickup)
+      if (!targetLngLat) return 0
+
+      return getBearingBetweenPoints([position.lng, position.lat], targetLngLat)
+    }
+
+    const currentLngLat = [position.lng, position.lat]
+    const targetLngLat = getLngLat(pickup)
 
     let nearestIndex = 0
     let minDistance = Infinity
 
     route.forEach((point, index) => {
       const distance =
-        Math.abs(point[0] - captainLngLat[0]) +
-        Math.abs(point[1] - captainLngLat[1])
+        Math.abs(point[0] - currentLngLat[0]) +
+        Math.abs(point[1] - currentLngLat[1])
 
       if (distance < minDistance) {
         minDistance = distance
@@ -129,6 +194,8 @@ const Map2 = ({
     const currentPoint = route[nearestIndex]
 
     const forwardPoint =
+      route[nearestIndex + 8] ||
+      route[nearestIndex + 7] ||
       route[nearestIndex + 6] ||
       route[nearestIndex + 5] ||
       route[nearestIndex + 4] ||
@@ -137,6 +204,8 @@ const Map2 = ({
       route[nearestIndex + 1]
 
     const backwardPoint =
+      route[nearestIndex - 8] ||
+      route[nearestIndex - 7] ||
       route[nearestIndex - 6] ||
       route[nearestIndex - 5] ||
       route[nearestIndex - 4] ||
@@ -146,19 +215,16 @@ const Map2 = ({
 
     let nextPoint = forwardPoint || backwardPoint
 
-    if (pickupLngLat && forwardPoint && backwardPoint) {
-      const forwardDistanceToPickup =
-        Math.abs(forwardPoint[0] - pickupLngLat[0]) +
-        Math.abs(forwardPoint[1] - pickupLngLat[1])
+    if (targetLngLat && forwardPoint && backwardPoint) {
+      const forwardDistance =
+        Math.abs(forwardPoint[0] - targetLngLat[0]) +
+        Math.abs(forwardPoint[1] - targetLngLat[1])
 
-      const backwardDistanceToPickup =
-        Math.abs(backwardPoint[0] - pickupLngLat[0]) +
-        Math.abs(backwardPoint[1] - pickupLngLat[1])
+      const backwardDistance =
+        Math.abs(backwardPoint[0] - targetLngLat[0]) +
+        Math.abs(backwardPoint[1] - targetLngLat[1])
 
-      nextPoint =
-        forwardDistanceToPickup < backwardDistanceToPickup
-          ? forwardPoint
-          : backwardPoint
+      nextPoint = forwardDistance < backwardDistance ? forwardPoint : backwardPoint
     }
 
     if (!currentPoint || !nextPoint) return 0
@@ -177,11 +243,125 @@ const Map2 = ({
   }
 
   const getVehicleImage = () => {
-    if (vehicleType === "bike") return getBikeImageByBearing()
-    if (vehicleType === "car") return "/car_3d.png"
-    if (vehicleType === "auto") return "/Auto.png"
+    const type = getFinalVehicleType()
+
+    if (type === "car") return VEHICLE_IMAGES.car
+    if (type === "auto") return VEHICLE_IMAGES.auto
 
     return getBikeImageByBearing()
+  }
+
+  const preloadImages = () => {
+    const images = [
+      ...Object.values(BIKE_IMAGES),
+      VEHICLE_IMAGES.car,
+      VEHICLE_IMAGES.auto,
+    ]
+
+    images.forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  }
+
+  const addTransparentMissingImage = (map, id) => {
+    if (id === undefined || id === null) return
+
+    try {
+      if (map.hasImage(id)) return
+
+      map.addImage(id, {
+        width: 1,
+        height: 1,
+        data: new Uint8Array([0, 0, 0, 0]),
+      })
+    } catch (error) {
+      // ignore duplicate or invalid style image
+    }
+  }
+
+  const handleMissingStyleImages = (map) => {
+    addTransparentMissingImage(map, " ")
+
+    map.on("styleimagemissing", (e) => {
+      addTransparentMissingImage(map, e.id)
+    })
+  }
+
+  const add3DBuildings = (map) => {
+    const style = map.getStyle()
+
+    if (!style?.layers) return
+
+    const labelLayerId = style.layers.find(
+      (layer) =>
+        layer.type === "symbol" &&
+        layer.layout &&
+        layer.layout["text-field"]
+    )?.id
+
+    if (!map.getSource("openmaptiles")) return
+    if (map.getLayer("3d-buildings")) return
+
+    map.addLayer(
+      {
+        id: "3d-buildings",
+        source: "openmaptiles",
+        "source-layer": "building",
+        type: "fill-extrusion",
+        minzoom: 15,
+        paint: {
+          "fill-extrusion-color": "#d6dde6",
+          "fill-extrusion-opacity": 0.7,
+          "fill-extrusion-height": [
+            "coalesce",
+            ["get", "render_height"],
+            ["get", "height"],
+            12,
+          ],
+          "fill-extrusion-base": [
+            "coalesce",
+            ["get", "render_min_height"],
+            ["get", "min_height"],
+            0,
+          ],
+        },
+      },
+      labelLayerId
+    )
+  }
+
+  const removeVehicleMarker = () => {
+    if (!vehicleMarkerRef.current) return
+
+    vehicleMarkerRef.current.remove()
+    vehicleMarkerRef.current = null
+  }
+
+  const removeUserMarker = () => {
+    if (!userMarkerRef.current) return
+
+    userMarkerRef.current.remove()
+    userMarkerRef.current = null
+  }
+
+  const removeTargetMarker = () => {
+    if (!targetMarkerRef.current) return
+
+    targetMarkerRef.current.remove()
+    targetMarkerRef.current = null
+  }
+
+  const clearRoute = (map) => {
+    if (!map) return
+
+    if (map.getLayer("route-line")) {
+      map.removeLayer("route-line")
+    }
+
+    if (map.getSource("route-source")) {
+      map.removeSource("route-source")
+    }
   }
 
   const createVehicleMarker = (map, location) => {
@@ -190,10 +370,9 @@ const Map2 = ({
     if (!lngLat) return
 
     const vehicleImage = getVehicleImage()
+    const markerElement = document.createElement("div")
 
     lastVehicleImageRef.current = vehicleImage
-
-    const markerElement = document.createElement("div")
 
     markerElement.innerHTML = `
       <div style="
@@ -206,20 +385,43 @@ const Map2 = ({
         transform: translateY(-8px);
         filter: drop-shadow(0 16px 14px rgba(0,0,0,0.35));
       ">
-        <img 
-          class="vehicle-img"
-          src="${vehicleImage}" 
+        <img
+          class="vehicle-marker-img"
+          src="${vehicleImage}"
           draggable="false"
           style="
             width: 80px;
             height: 80px;
             object-fit: contain;
             transition: opacity 0.2s ease;
-            will-change: opacity;
           "
         />
       </div>
     `
+
+    const image = markerElement.querySelector(".vehicle-marker-img")
+
+    if (image) {
+      image.onerror = () => {
+        const type = getFinalVehicleType()
+
+        markerElement.innerHTML = `
+          <div style="
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+          ">
+            ${type === "car" ? "🚗" : type === "auto" ? "🛺" : "🏍️"}
+          </div>
+        `
+      }
+    }
 
     vehicleMarkerRef.current = new maplibregl.Marker({
       element: markerElement,
@@ -276,8 +478,8 @@ const Map2 = ({
       .addTo(map)
   }
 
-  const createPickupMarker = (map, pickupLocation) => {
-    const lngLat = getLngLat(pickupLocation)
+  const createTargetMarker = (map, location) => {
+    const lngLat = getLngLat(location)
 
     if (!lngLat) return
 
@@ -285,8 +487,8 @@ const Map2 = ({
 
     markerElement.innerHTML = `
       <div style="
-        width: 42px;
-        height: 42px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         background: rgba(34,197,94,0.16);
         display: flex;
@@ -313,7 +515,7 @@ const Map2 = ({
       </div>
     `
 
-    pickupMarkerRef.current = new maplibregl.Marker({
+    targetMarkerRef.current = new maplibregl.Marker({
       element: markerElement,
       anchor: "center",
     })
@@ -321,28 +523,30 @@ const Map2 = ({
       .addTo(map)
   }
 
-  const removeVehicleMarker = () => {
+  const updateVehicleMarker = () => {
+    if (!mapRef.current) return
+
+    if (!showVehicleMarker) {
+      removeVehicleMarker()
+      return
+    }
+
+    const lngLat = [position.lng, position.lat]
+
+    if (!vehicleMarkerRef.current) {
+      createVehicleMarker(mapRef.current, {
+        lat: position.lat,
+        lng: position.lng,
+      })
+    }
+
     if (!vehicleMarkerRef.current) return
 
-    vehicleMarkerRef.current.remove()
-    vehicleMarkerRef.current = null
-  }
-
-  const removeUserMarker = () => {
-    if (!userMarkerRef.current) return
-
-    userMarkerRef.current.remove()
-    userMarkerRef.current = null
-  }
-
-  const updateVehicleMarkerStyle = () => {
-    if (!mapRef.current || !vehicleMarkerRef.current) return
-
-    vehicleMarkerRef.current.setLngLat([position.lng, position.lat])
+    vehicleMarkerRef.current.setLngLat(lngLat)
 
     const img = vehicleMarkerRef.current
       .getElement()
-      .querySelector(".vehicle-img")
+      .querySelector(".vehicle-marker-img")
 
     if (!img) return
 
@@ -354,83 +558,62 @@ const Map2 = ({
     }
   }
 
-  const updateUserMarkerStyle = () => {
-    if (!mapRef.current || !userMarkerRef.current) return
-
-    userMarkerRef.current.setLngLat([position.lng, position.lat])
-  }
-
-  const updateMainMarker = () => {
+  const updateUserMarker = () => {
     if (!mapRef.current) return
 
     if (showVehicleMarker) {
       removeUserMarker()
+      return
+    }
 
-      if (!vehicleMarkerRef.current) {
-        createVehicleMarker(mapRef.current, position)
-      }
+    const lngLat = [position.lng, position.lat]
 
-      updateVehicleMarkerStyle()
+    if (!userMarkerRef.current) {
+      createUserMarker(mapRef.current, {
+        lat: position.lat,
+        lng: position.lng,
+      })
+    }
+
+    if (!userMarkerRef.current) return
+
+    userMarkerRef.current.setLngLat(lngLat)
+  }
+
+  const updateMainMarker = () => {
+    if (showVehicleMarker) {
+      removeUserMarker()
+      updateVehicleMarker()
     } else {
       removeVehicleMarker()
-
-      if (!userMarkerRef.current) {
-        createUserMarker(mapRef.current, position)
-      }
-
-      updateUserMarkerStyle()
+      updateUserMarker()
     }
   }
 
-  const add3DBuildings = (map) => {
-    const layers = map.getStyle().layers
+  const updateTargetMarker = () => {
+    if (!mapRef.current) return
 
-    const labelLayerId = layers.find(
-      (layer) =>
-        layer.type === "symbol" &&
-        layer.layout &&
-        layer.layout["text-field"]
-    )?.id
+    const targetLngLat = getLngLat(pickup)
 
-    if (!map.getSource("openmaptiles")) return
-    if (map.getLayer("3d-buildings")) return
+    if (!targetLngLat) {
+      removeTargetMarker()
+      return
+    }
 
-    map.addLayer(
-      {
-        id: "3d-buildings",
-        source: "openmaptiles",
-        "source-layer": "building",
-        type: "fill-extrusion",
-        minzoom: 15,
-        paint: {
-          "fill-extrusion-color": "#d6dde6",
-          "fill-extrusion-opacity": 0.7,
-          "fill-extrusion-height": [
-            "coalesce",
-            ["get", "render_height"],
-            ["get", "height"],
-            12,
-          ],
-          "fill-extrusion-base": [
-            "coalesce",
-            ["get", "render_min_height"],
-            ["get", "min_height"],
-            0,
-          ],
-        },
-      },
-      labelLayerId
-    )
+    if (!targetMarkerRef.current) {
+      createTargetMarker(mapRef.current, pickup)
+    }
+
+    if (!targetMarkerRef.current) return
+
+    targetMarkerRef.current.setLngLat(targetLngLat)
   }
 
-  const clearRoute = (map) => {
-    if (map.getLayer("route-line")) {
-      map.removeLayer("route-line")
-    }
+  const syncMarkers = () => {
+    if (!mapRef.current) return
 
-    if (map.getSource("route-source")) {
-      map.removeSource("route-source")
-    }
+    updateMainMarker()
+    updateTargetMarker()
   }
 
   const drawRoute = (map, coordinates = routeCoordinatesRef.current) => {
@@ -494,7 +677,7 @@ const Map2 = ({
   }
 
   useEffect(() => {
-    preloadVehicleImages()
+    preloadImages()
   }, [])
 
   useEffect(() => {
@@ -526,64 +709,120 @@ const Map2 = ({
       {
         enableHighAccuracy: true,
         timeout: 10000,
+        maximumAge: 5000,
       }
     )
   }, [])
 
+  const getInitialProvider = () => {
+    const blockedTill = Number(localStorage.getItem("maptilerBlockedTill") || 0)
+
+    if (!mapTilerKey) return "free"
+
+    if (Date.now() < blockedTill) {
+      return "free"
+    }
+
+    return "maptiler"
+  }
+
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
-    const mapStyle = mapTilerKey
-      ? `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`
-      : "https://tiles.openfreemap.org/styles/liberty"
+    //If Maptiler Limit Rached then we Automatically swich
 
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: mapStyle,
-      center: [position.lng, position.lat],
-      zoom: 16.3,
-      pitch: showVehicleMarker ? 50 : 35,
-      bearing: 0,
-      dragRotate: false,
-      touchPitch: false,
-      antialias: true,
-      attributionControl: false,
-    })
+    const MAP_STYLES = {
+      maptiler: `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`,
+      free: "https://tiles.openfreemap.org/styles/liberty",
+    }
 
-    mapRef.current = map
+    let fallbackDone = false
 
-    map.dragRotate.disable()
-    map.touchZoomRotate.disableRotation()
+    const createMap = (provider) => {
+      const map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: MAP_STYLES[provider],
+        center: [position.lng, position.lat],
+        zoom: showVehicleMarker ? 16.8 : 15.8,
+        pitch: showVehicleMarker ? 42 : 30,
+        bearing: 0,
+        dragRotate: true,
+        touchPitch: true,
+        antialias: true,
+        attributionControl: false,
+      })
 
-    map.on("load", () => {
-      add3DBuildings(map)
-      updateMainMarker()
+      mapRef.current = map
 
-      if (showVehicleMarker) {
-        createPickupMarker(map, pickup)
+      handleMissingStyleImages(map)
+
+      map.on("load", () => {
+        add3DBuildings(map)
+        syncMarkers()
         drawRoute(map, routeCoordinatesRef.current)
-      }
-    })
+      })
+
+      map.on("error", (e) => {
+        const message = e?.error?.message || ""
+
+        const shouldFallback =
+          provider === "maptiler" &&
+          !fallbackDone &&
+          (
+            message.includes("401") ||
+            message.includes("403") ||
+            message.includes("429") ||
+            message.toLowerCase().includes("quota") ||
+            message.toLowerCase().includes("limit") ||
+            message.toLowerCase().includes("key") ||
+            message.toLowerCase().includes("unauthorized")
+          )
+
+        if (!shouldFallback) return
+
+        fallbackDone = true
+
+        localStorage.setItem(
+          "maptilerBlockedTill",
+          String(Date.now() + 24 * 60 * 60 * 1000)
+        )
+
+        map.remove()
+        mapRef.current = null
+        vehicleMarkerRef.current = null
+        userMarkerRef.current = null
+        targetMarkerRef.current = null
+
+        createMap("free")
+      })
+    }
+
+    createMap(getInitialProvider())
 
     return () => {
-      map.remove()
-      mapRef.current = null
-      vehicleMarkerRef.current = null
-      userMarkerRef.current = null
-      pickupMarkerRef.current = null
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+        vehicleMarkerRef.current = null
+        userMarkerRef.current = null
+        targetMarkerRef.current = null
+      }
     }
   }, [])
 
   useEffect(() => {
     if (!mapRef.current) return
 
+    const bearing = showVehicleMarker ? getNavigationBearing() : 0
+
     mapRef.current.flyTo({
       center: [position.lng, position.lat],
-      zoom: showVehicleMarker ? 16.8 : 15.8,
-      pitch: showVehicleMarker ? 50 : 35,
-      bearing: showVehicleMarker ? 0 : 0,
-      offset: showVehicleMarker ? [0, 70] : [0, 0],
-      speed: 1.2,
+      zoom: showVehicleMarker ? 17 : 15.8,
+      pitch: showVehicleMarker ? 42 : 30,
+      bearing,
+      offset: showVehicleMarker ? [0, 90] : [0, 0],
+      speed: 1.15,
+      curve: 1,
     })
 
     updateMainMarker()
@@ -592,32 +831,14 @@ const Map2 = ({
   useEffect(() => {
     if (!mapRef.current) return
 
-    if (!showVehicleMarker) {
-      if (pickupMarkerRef.current) {
-        pickupMarkerRef.current.remove()
-        pickupMarkerRef.current = null
-      }
-
-      clearRoute(mapRef.current)
-      return
-    }
-
-    const pickupLngLat = getLngLat(pickup)
-
-    if (!pickupLngLat) return
-
-    if (pickupMarkerRef.current) {
-      pickupMarkerRef.current.setLngLat(pickupLngLat)
-    } else {
-      createPickupMarker(mapRef.current, pickup)
-    }
-
-    updateMainMarker()
-  }, [pickup, showVehicleMarker])
-
-  useEffect(() => {
     updateMainMarker()
   }, [vehicleType, showVehicleMarker, routeCoordinates])
+
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    updateTargetMarker()
+  }, [pickup])
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -625,13 +846,9 @@ const Map2 = ({
     const map = mapRef.current
 
     const updateRouteOnMap = () => {
-      if (!showVehicleMarker) {
-        clearRoute(map)
-        return
-      }
-
       drawRoute(map, routeCoordinatesRef.current)
       updateMainMarker()
+      updateTargetMarker()
     }
 
     if (map.isStyleLoaded()) {
@@ -639,7 +856,7 @@ const Map2 = ({
     } else {
       map.once("load", updateRouteOnMap)
     }
-  }, [routeCoordinates, showVehicleMarker])
+  }, [routeCoordinates])
 
   return <div ref={mapContainer} className="w-full h-full" />
 }

@@ -1,15 +1,15 @@
 
 import { use, useContext, useState } from "react";
-import { login,Register } from "../services/auth.api";
+import { login, Register } from "../services/auth.api";
 import { captainContext } from "../../../Context/CaptainContext"
 
 
 export const useAuth = () => {
     const [isRegistering, setIsRegistering] = useState(false);
     const [registeredCaptain, setRegisteredCaptain] = useState(null);
-    const [isloading,setIsLoading] = useState(false)
+    const [isloading, setIsLoading] = useState(false)
 
-    const { captainData, setCaptainData, captainLogin, setCaptainLogin, openalert } = useContext(captainContext)
+    const { openalert, fetchCaptainProfile } = useContext(captainContext)
 
     const handleRegister = async ({
         fullname,
@@ -29,7 +29,7 @@ export const useAuth = () => {
                 vehicle,
             })
 
-
+        
             openalert("Success", data?.message || "Captain registered successfully")
 
             return data
@@ -49,26 +49,29 @@ export const useAuth = () => {
         }
     }
 
-    const handleLogin = async({email,password}) => {
+    const handleLogin = async ({ email, password }) => {
         try {
             setIsLoading(true)
 
-            const data = await login({email,password})
+            const data = await login({ email, password })
 
-            openalert("Success", data?.message || "Captain registered successfully")
+                await fetchCaptainProfile()
+
+
+            openalert("Success", data?.message || "Captain Login successfully")
 
             return data
 
-            
+
         } catch (error) {
-             openalert(
+            openalert(
                 "Error",
-                error?.message || error?.errors?.[0]?.msg || "Captain registration failed"
+                error?.message || error?.errors?.[0]?.msg || "Captain login failed"
             )
 
-             return null
+            return null
         }
-        finally{
+        finally {
             setIsLoading(false)
         }
     }

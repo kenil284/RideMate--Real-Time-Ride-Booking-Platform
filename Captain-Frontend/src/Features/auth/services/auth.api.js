@@ -22,3 +22,4 @@ export async function login(data) {
         throw error.response.data;
     }
 }
+

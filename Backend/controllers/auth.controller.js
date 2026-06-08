@@ -1,14 +1,16 @@
-import refreshTokenModel from "../models/refreshToken.model";
-import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.util";
+import captainModel from "../models/captian.model.js";
+import refreshTokenModel from "../models/refreshToken.model.js";
+import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.util.js";
 
 const cookieOptions = {
   httpOnly: true
 }
 
 export const refreshAccessTokenController = async (req, res) => {
+
   try {
     const refreshToken =
-      req.cookies?.refreshToken || req.body.refreshToken;
+      req.cookies?.userRefreshToken || req.body.userRefreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -28,9 +30,11 @@ export const refreshAccessTokenController = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    const accessToken = generateAccessToken(decoded.id, decoded.role);
+    console.log("deocdd refresh token is",decoded)
 
-    res.cookie("accessToken", accessToken, {
+    const accessToken = generateAccessToken(decoded.userId);
+
+    res.cookie("userAccessToken", accessToken, {
       ...cookieOptions,
       maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000,
     });
@@ -45,3 +49,57 @@ export const refreshAccessTokenController = async (req, res) => {
     });
   }
 };
+
+export const refreshCaptainAccessTokenController = async (req, res) => {
+  try {
+    const refreshToken =
+      req.cookies?.captainRefreshToken || req.body.captainRefreshToken
+
+      
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        message: "Refresh token not found",
+      })
+    }
+
+    const storedToken = await refreshTokenModel.findOne({
+      token: refreshToken,
+    })
+
+    
+
+    if (!storedToken) {
+      return res.status(401).json({
+        message: "Invalid refresh token",
+      })
+    }
+
+    const decoded = verifyRefreshToken(refreshToken)
+
+    const captain = await captainModel.findById(decoded.userId)
+
+    if (!captain) {
+      return res.status(401).json({
+        message: "Captain not found",
+      })
+    }
+
+    const accessToken = generateAccessToken(captain._id)
+
+    res.cookie("captainAccessToken", accessToken, {
+      ...cookieOptions,
+      maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000,
+    })
+
+    return res.status(200).json({
+      message: "Captain access token refreshed successfully",
+      accessToken,
+    })
+  } catch (error) {
+    console.log(error)
+    return res.status(401).json({
+      message: "Invalid or expired refresh token",
+    })
+  }
+}

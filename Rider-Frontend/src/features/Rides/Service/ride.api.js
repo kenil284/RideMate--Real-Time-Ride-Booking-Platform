@@ -1,9 +1,9 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL
+const BASE_URL = import.meta.env.VITE_API_URL
 
 export const getRideEstimateApi = async ({ pickup, destination }) => {
-    const response = await axios.get(`${API_URL}/api/location/get-ride-estimate`, {
+    const response = await axios.get(`${BASE_URL}/api/location/get-ride-estimate`, {
         params: {
             pickupLat: pickup.lat,
             pickupLng: pickup.lng,
@@ -25,7 +25,7 @@ export const createRideApi = async ({
     fare,
     paymentMethod, }) => {
 
-    const response = await axios.post(`${API_URL}/api/ride/create-ride`, {
+    const response = await axios.post(`${BASE_URL}/api/ride/create-ride`, {
         pickup,
         destination,
         distanceKm,
@@ -42,9 +42,23 @@ export const createRideApi = async ({
 }
 
 export const getActiveRideApi = async () => {
-    const response = await axios.get(`${API_URL}/api/ride/get-active-ride`, {
+    const response = await axios.get(`${BASE_URL}/api/ride/get-active-ride`, {
         withCredentials: true,
     });
 
     return response.data;
 };
+
+
+export const cancelRideByUserService = async ({ rideId, cancelReason }) => {
+    try {
+        const res = await axios.post(
+        `${BASE_URL}/api/ride/cancel/user/${rideId}`,{},
+        {
+            withCredentials: true,
+        })
+        return res.data
+    } catch (error) {
+        console.log(error)
+    }
+}

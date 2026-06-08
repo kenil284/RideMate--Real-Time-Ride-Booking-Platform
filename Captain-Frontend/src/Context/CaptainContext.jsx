@@ -1,8 +1,8 @@
-// src/context/CaptainContext.jsx
-
 import React, { createContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getCaptainProfileService } from "../Features/captain-ride/services/captainDashboard.service";
+import { getCaptainProfileService, refreshCaptainAccessTokenService } from "../services/captain.service";
+
+
 
 export const captainContext = createContext();
 
@@ -13,13 +13,17 @@ const CaptainContextProvider = ({ children }) => {
 
   const openalert = (status, msg) => {
     if (status === "Success") {
-      toast.success(msg);
+      toast.success(msg)
     }
 
     if (status === "Error") {
-      toast.error(msg);
+      toast.error(msg)
     }
-  };
+
+    if (status === "Info") {
+      toast(msg)
+    }
+  }
 
   const fetchCaptainProfile = async () => {
     try {
@@ -30,8 +34,17 @@ const CaptainContextProvider = ({ children }) => {
       setCaptainData(captain);
       setCaptainLogin(true);
     } catch (error) {
-      setCaptainData(null);
-      setCaptainLogin(false);
+      try {
+        await refreshCaptainAccessTokenService();
+
+        const captain = await getCaptainProfileService();
+
+        setCaptainData(captain);
+        setCaptainLogin(true);
+      } catch (refreshError) {
+        setCaptainData(null);
+        setCaptainLogin(false);
+      }
     } finally {
       setLoading(false);
     }

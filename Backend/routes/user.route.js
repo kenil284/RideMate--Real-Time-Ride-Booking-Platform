@@ -2,6 +2,8 @@ import { Router } from "express";
 import { loginuserController, logoutUserController, registerUserController, userProfileController } from "../controllers/user.controller.js";
 import { body } from "express-validator";
 import { authUser } from "../middlewares/auth.middleware.js";
+import { refreshAccessTokenController } from "../controllers/auth.controller.js";
+
 
 
 const userRouter = Router()
@@ -48,6 +50,8 @@ userRouter.get("/profile", authUser, userProfileController)
  */
 
 userRouter.post("/logout", authUser, logoutUserController)
+
+userRouter.post("/refresh-token",refreshAccessTokenController)
 
 
 export default userRouter;

@@ -3,6 +3,7 @@ import captainModel from "../models/captian.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js";
 import { hashPassword, verifyPassword } from "../utils/password.util.js";
 import { getCaptainTodayDashboard } from "../services/captain.service.js";
+import refreshTokenModel from "../models/refreshToken.model.js";
 
 /**
  * @name registerCaptainController
@@ -160,6 +161,8 @@ export const loginCaptainController = async (req, res) => {
 
         const accessToken = generateAccessToken(captain._id);
         const refreshToken = generateRefreshToken(captain._id);
+
+        await refreshTokenModel.create({token: refreshToken,user: captain._id});
 
         res.cookie("captainAccessToken", accessToken, {
             httpOnly: true,

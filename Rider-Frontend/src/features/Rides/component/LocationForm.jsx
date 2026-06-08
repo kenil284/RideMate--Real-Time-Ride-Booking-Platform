@@ -51,7 +51,7 @@ const LocationForm = ({
         onClick={findTrip}
         disabled={isFindTripDisabled || isRideSearching}
         className={`w-full h-[48px] rounded-lg font-semibold mt-4 transition flex items-center justify-center gap-2 ${isFindTripDisabled || isRideSearching
-            ? "bg-gray-700 text-white cursor-not-allowed"
+            ? "bg-gray-900 text-white cursor-not-allowed"
             : "bg-black text-white active:scale-[0.97]"
           }`}
       >

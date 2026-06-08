@@ -79,3 +79,21 @@ export const sendRideCompletedToUser = (userId, ride) => {
         ride,
     })
 }
+
+export const sendRideCancelledToCaptain = (captainId, ride) => {
+    const captainSocket = getCaptainSocket()
+
+    console.log("cpatain id is",captainId)
+
+    captainSocket.to(captainId.toString()).emit("ride-cancelled-by-rider", {
+        ride,
+    })
+}
+
+export const sendRideCancelledToUser = (userId, ride) => {
+    const userSocket = getUserSocket()
+
+    userSocket.to(userId.toString()).emit("ride-cancelled-by-captain", {
+        ride,
+    })
+}

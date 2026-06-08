@@ -141,6 +141,24 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
       setStage("location")
     })
 
+    socket.on("ride-cancelled-by-captain", ({ ride }) => {
+  
+    setRideData((prev) => ({
+        ...prev,
+        captain: null,
+        status: "",
+        otp: "",
+
+        captainToPickupRoute: [],
+        captainToPickupInfo: {
+            distanceKm: 0,
+            durationMin: 0,
+        },
+    }))
+    openalert("Info","Ride Cancelled By Captain")
+
+    setStage("confirm")
+})
 
     return () => {
       disconnectSocket();

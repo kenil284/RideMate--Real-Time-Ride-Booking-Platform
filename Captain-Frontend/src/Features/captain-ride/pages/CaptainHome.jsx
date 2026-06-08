@@ -10,7 +10,7 @@ import { useCaptainLocation } from "../hooks/useCaptainLocation";
 import RideRequest from "../component/RideRequest";
 import { useContext } from "react";
 import { captainContext } from "../../../Context/CaptainContext";
-import { acceptRideService, completeRideService, startRideService } from "../services/captainRide.service";
+import { acceptRideService, cancelRideByCaptainService, completeRideService, startRideService } from "../services/captainRide.service";
 import { useCaptainActiveRide } from "../hooks/useCaptainActiveRide";
 import { useCaptainPickupRoute } from "../hooks/useCaptainPickupRoute";
 import Map2 from "../component/Map2";
@@ -85,9 +85,11 @@ const CaptainHome = () => {
 
     useCaptainActiveRide({ setCurrentRide, setStage })
 
-    const { socketstate } = useCaptainSocket({ setRequests, setStage });
+
 
     const { isOnline, isUpdating, toggleAvailability } = useCaptainAvailability();
+
+    const { socketstate } = useCaptainSocket({ isOnline, setCurrentRide, setRequests, setStage });
 
     const { dashboard, isDashboardLoading } = useCaptainDashboard();
 
@@ -168,6 +170,31 @@ const CaptainHome = () => {
         })
     }
 
+
+    const handleCurrentCancelRide = async () => {
+    try {
+        const rideId = currentRide?._id
+
+        if (!rideId) return
+
+        const data = await cancelRideByCaptainService({
+            rideId
+        })
+
+        setCurrentRide(null)
+        setStage("looking")
+
+        openalert("Success", data?.message || "Ride cancelled successfully")
+
+    } catch (error) {
+         console.log(error)
+        openalert(
+            "Error",
+            error.response?.data?.message || "Failed to cancel ride"
+        )
+    }
+}
+
     // useEffect(() => {
     //     console.log("Captain current location:", captainCurrentLocation)
     //     console.log("Last location:", lastLocation)
@@ -175,22 +202,32 @@ const CaptainHome = () => {
     //     console.log("Captain route:", captainRoute)
     // }, [captainCurrentLocation, lastLocation, currentRide, captainRoute])
 
-    const mapRoute = stage === "navigating"
-        ? captainDestinationRoute
-        : captainRoute
+    const mapRoute =
+        stage === "navigating"
+            ? captainDestinationRoute
+            : stage === "accepted" || stage === "otp"
+                ? captainRoute
+                : []
 
-    const mapLocation = stage === "navigating"
-        ? captainDestinationLocation
-        : captainCurrentLocation
+    const mapLocation =
+        stage === "navigating"
+            ? captainDestinationLocation
+            : stage === "accepted" || stage === "otp"
+                ? captainCurrentLocation
+                : lastLocation
 
-    const mapTarget = stage === "navigating"
-        ? currentRide?.destination
-        : currentRide?.pickup
+    const mapTarget =
+        stage === "navigating"
+            ? currentRide?.destination
+            : stage === "accepted" || stage === "otp"
+                ? currentRide?.pickup
+                : null
 
 
 
     const handleCompleteRide = async () => {
         try {
+            
             const data = await completeRideService(currentRide._id)
 
             setCurrentRide(null)
@@ -202,9 +239,12 @@ const CaptainHome = () => {
                 totalRides: (prev.totalRides || 0) + 1,
             }))
 
+           
+
             openalert("Success", data.message || "Ride completed successfully")
 
         } catch (error) {
+            console.log(error)
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to complete ride"
@@ -224,7 +264,7 @@ const CaptainHome = () => {
                     routeCoordinates={mapRoute}
                     currentLocation={mapLocation}
                     pickup={mapTarget}
-                    vehicleType={currentRide?.vehicle?.type || "bike"}
+                    vehicleType={currentRide?.vehicle?.type || captainData?.vehicle?.vehicleType || "bike"}
                 />
             </div>
 
@@ -268,8 +308,8 @@ const CaptainHome = () => {
                 {stage === "accepted" && (
                     <AcceptedRide
                         ride={currentRide}
-                        routeInfo={routeInfo}
                         onArrived={() => setStage("otp")}
+                        onCancel={handleCurrentCancelRide}
                     />
                 )}
 

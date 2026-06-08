@@ -1,7 +1,7 @@
 import { validationResult } from "express-validator";
 import rideModel from "../Models/ride.model.js";
 import { findNearbyCaptainsForRide } from "../services/captain.service.js";
-import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
+import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCancelledToCaptain, sendRideCancelledToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
 import captainModel from "../models/captian.model.js";
 import { getDistanceTimeService } from "../services/maps.service.js";
 
@@ -432,6 +432,125 @@ export const completeRideController = async (req, res) => {
 
         return res.status(500).json({
             message: "Failed to complete ride",
+        })
+    }
+}
+
+
+export const cancelRideByUserController = async (req, res) => {
+    try {
+        const rider = req.userId
+        const { rideId } = req.params
+
+        const ride = await rideModel.findOne({
+            _id: rideId,
+            rider,
+            status: {
+                $in: ["looking", "accepted", "arrived"],
+            },
+        })
+
+        if (!ride) {
+            return res.status(400).json({
+                message: "Ride cannot be cancelled now",
+            })
+        }
+
+        const previousStatus = ride.status
+        const captainId = ride.captain
+
+        ride.status = "cancelled"
+        ride.cancelledBy = "rider"
+        ride.cancelReason = "Cancelled by rider"
+        ride.cancelledAt = new Date()
+        ride.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+        await ride.save()
+
+        if (captainId) {
+            await captainModel.findByIdAndUpdate(captainId, {
+                $set: {
+                    isAvailable: false,
+                    currentRide: null,
+                },
+            })
+        }
+
+        const cancelledRide = await rideModel.findById(ride._id).populate("rider").populate("captain")
+
+        if (previousStatus === "looking") {
+            removeRideRequestFromCaptains(ride._id)
+        }
+
+        if (captainId) {
+            sendRideCancelledToCaptain(captainId, cancelledRide)
+        }
+
+        return res.status(200).json({
+            message: "Ride cancelled successfully",
+            ride: cancelledRide,
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            message: "Failed to cancel ride",
+        })
+    }
+}
+
+export const cancelRideByCaptainController = async (req, res) => {
+    try {
+        const captainId = req.captainId
+        const { rideId } = req.params
+
+
+        const ride = await rideModel.findOne({
+            _id: rideId,
+            captain: captainId,
+            status: {
+                $in: ["accepted", "arrived"],
+            },
+        })
+
+        if (!ride) {
+            return res.status(400).json({
+                message: "Ride cannot be cancelled now",
+            })
+        }
+
+        ride.status = "cancelled"
+        ride.cancelledBy = "captain"
+        ride.cancelReason = "Cancelled by captain"
+        ride.cancelledAt = new Date()
+        ride.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+
+        await ride.save()
+
+        await captainModel.findByIdAndUpdate(captainId, {
+            $set: {
+                isAvailable: false,
+                currentRide: null,
+            },
+        })
+
+        const cancelledRide = await rideModel
+            .findById(ride._id)
+            .populate("rider")
+            .populate("captain")
+
+        sendRideCancelledToUser(cancelledRide.rider._id, cancelledRide)
+
+        return res.status(200).json({
+            message: "Ride cancelled successfully",
+            ride: cancelledRide,
+        })
+
+    } catch (error) {
+        console.log(error)
+
+        return res.status(500).json({
+            message: "Failed to cancel ride",
         })
     }
 }

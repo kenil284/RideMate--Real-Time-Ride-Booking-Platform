@@ -6,6 +6,8 @@ import { verifyAccessToken } from "../utils/jwt.util.js";
 export const authUser = async (req, res, next) => {
     const token = req.cookies.userAccessToken || req.headers.authorization?.split(" ")[1];
 
+   
+
     if (!token) {
         return res.status(400).json({
             message: "Unauthorized"
@@ -14,6 +16,8 @@ export const authUser = async (req, res, next) => {
 
     try {
         const decoded = verifyAccessToken(token);
+
+        console.log(decoded)
 
         const user = await userModel.findById(decoded.userId);
 

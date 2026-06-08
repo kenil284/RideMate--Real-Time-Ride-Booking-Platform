@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 
 import BottomSheet from "../component/BottomSheet";
 import LocationForm from "../component/LocationForm";
@@ -17,10 +17,13 @@ import useActiveRide from "../Hooks/useActiveRide";
 import Map2 from "../component/Map2";
 import { useRiderSocket } from "../Hooks/useRiderSocket";
 import RideStarted from "../component/RideStarted";
+import { userContext } from "../../../Context/UserContextProvider";
+import { cancelRideByUserService } from "../Service/ride.api";
 
 const Ride = () => {
     const [stage, setStage] = useState("loading");
     const [activeField, setActiveField] = useState("pickup");
+    const { openalert } = useContext(userContext)
 
     // const [rideData, setRideData] = useState({
     //     rideId: "",
@@ -261,6 +264,81 @@ const Ride = () => {
         setStage("looking");
     };
 
+    const resetRideData = () => {
+        setRideData({
+            _id: "",
+            rider: null,
+            captain: null,
+
+            pickup: {
+                address: "",
+                lat: null,
+                lng: null,
+            },
+
+            destination: {
+                address: "",
+                lat: null,
+                lng: null,
+            },
+
+            distanceKm: 0,
+            durationMin: 0,
+
+            vehicle: {
+                type: "",
+                name: "",
+                image: "",
+                capacity: 1,
+            },
+
+            fare: 0,
+
+            paymentMethod: "cash",
+            paymentStatus: "pending",
+
+            status: "",
+
+            otp: "",
+
+            acceptedAt: null,
+            arrivedAt: null,
+            startedAt: null,
+            completedAt: null,
+            cancelledAt: null,
+
+            captainToPickupRoute: [],
+            captainToPickupInfo: {
+                distanceKm: 0,
+                durationMin: 0,
+            },
+        })
+    }
+
+    const handleCancelRide = async () => {
+        try {
+            const rideId = rideData._id || rideData.rideId
+
+            if (!rideId) return
+
+            await cancelRideByUserService({
+                rideId,
+                cancelReason: "Cancelled by rider",
+            })
+
+            resetRideData()
+            console.log(rideData)
+            setStage("location")
+
+        } catch (error) {
+            console.log(error)
+            openalert(
+                "Error",
+                error.response?.data?.message || "Failed to cancel ride"
+            )
+        }
+    }
+
 
     const isCaptainTracking =
         ["accepted", "arrived", "started"].includes(rideData.status) &&
@@ -285,35 +363,39 @@ const Ride = () => {
                             : null
                     }
                     pickup={isCaptainTracking ? rideData.pickup : null}
-                    vehicleType={"bike"}
+                    vehicleType={rideData.vehicle?.type || "bike"}
                     showVehicleMarker={isCaptainTracking}
                 />
             </div>
 
             {/* Small top gradient */}
-            <div className="fixed top-0 left-0 right-0 z-[9999] h-[130px] bg-gradient-to-b from-white/90 via-white/50 to-transparent px-4 pt-4 pointer-events-none">
-                <div className="flex items-center justify-between rounded-2xl bg-white/85 backdrop-blur-md shadow-lg px-4 py-3 pointer-events-auto">
+            <div className="fixed top-0 left-0 right-0 z-[9999] h-[125px] bg-gradient-to-b from-white/85 via-white/35 to-transparent px-4 pt-4 pointer-events-none">
+                <div className="max-w-[430px] mx-auto pointer-events-auto">
+                    <div className="rounded-[30px] bg-[#111217]/95 text-white shadow-[0_20px_55px_rgba(0,0,0,0.32)] border border-white/10 backdrop-blur-xl px-3 py-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-[20px] bg-white text-gray-950 flex items-center justify-center font-extrabold text-base shrink-0">
+                                {"Tirth".charAt(0).toUpperCase()}
+                            </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-semibold text-sm">
-                            {("T").charAt(0).toUpperCase()}
-                        </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-extrabold text-white/40 uppercase tracking-[0.12em]">
+                                    Good morning
+                                </p>
 
-                        <div>
-                            <h1 className="text-[15px] font-semibold text-black leading-tight">
-                                Good morning, {"Tirth"} 👋
-                            </h1>
+                                <h1 className="text-[17px] font-extrabold text-white leading-tight truncate mt-0.5">
+                                    {"Tirth"} 👋
+                                </h1>
 
-                            <p className="text-[12px] text-gray-500 mt-0.5">
-                                Where are you going today?
-                            </p>
+                                <p className="text-[12px] text-white/55 mt-0.5 truncate">
+                                    Where are you going today?
+                                </p>
+                            </div>
+
+                            <button className="w-12 h-12 rounded-[20px] bg-white/10 text-white flex items-center justify-center text-[24px] active:scale-95 transition shrink-0">
+                                ☰
+                            </button>
                         </div>
                     </div>
-
-                    <button className="w-10 h-10 rounded-full bg-[#f3f3f3] flex items-center justify-center text-[22px] text-black active:scale-95 transition">
-                        ☰
-                    </button>
-
                 </div>
             </div>
 
@@ -368,7 +450,10 @@ const Ride = () => {
                 )}
 
                 {stage === "waiting" && (
-                    <WaitingForDriver rideData={rideData} />
+                    <WaitingForDriver
+                        rideData={rideData}
+                        onCancelRide={handleCancelRide}
+                    />
                 )}
 
                 {stage === "riding" && (

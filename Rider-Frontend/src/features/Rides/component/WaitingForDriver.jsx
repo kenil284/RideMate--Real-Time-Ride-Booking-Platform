@@ -1,7 +1,7 @@
 import React from "react"
 import { FaPhone, FaShieldHalved } from "react-icons/fa6"
 
-const WaitingForDriver = ({ rideData }) => {
+const WaitingForDriver = ({ rideData , onCancelRide}) => {
   const captain = rideData?.captain
   const captainInfo = rideData?.captainToPickupInfo
 
@@ -94,7 +94,7 @@ const WaitingForDriver = ({ rideData }) => {
         </a>
 
         <button
-          onClick={() => console.log("Cancel ride coming soon")}
+          onClick={onCancelRide}
           className="h-14 rounded-2xl bg-gray-100 text-gray-800 font-bold flex items-center justify-center active:scale-95 transition"
         >
           Cancel Ride

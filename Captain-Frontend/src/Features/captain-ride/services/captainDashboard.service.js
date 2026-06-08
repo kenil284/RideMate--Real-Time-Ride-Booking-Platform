@@ -12,13 +12,7 @@ export const getCaptainTodayDashboardService = async () => {
   return res.data.dashboard;
 }
 
-export const getCaptainProfileService = async () => {
-  const res = await axios.get(`${BASE_URL}/api/captain/profile`, {
-    withCredentials: true,
-  });
 
-  return res.data.captain;
-};
 
 export const updateCaptainAvailabilityService = async (isAvailable) => {
   const res = await axios.put(
