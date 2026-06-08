@@ -41,8 +41,6 @@ const Map2 = ({
     routeCoordinatesRef.current = routeCoordinates || []
   }, [routeCoordinates])
 
-
-
   const getVehicleImage = () => {
     if (vehicleType === "bike") return "/Bike/bike-back.webp"
     if (vehicleType === "car") return "/Car/car-back.webp"
@@ -518,14 +516,6 @@ const Map2 = ({
         })
       }
 
-      if (map.getLayer("route-line")) {
-        map.moveLayer("route-line")
-      }
-
-      if (map.getLayer("route-line")) {
-        map.moveLayer("route-line")
-      }
-
       return
     }
 
@@ -563,34 +553,34 @@ const Map2 = ({
   }
 
   const moveCameraToCaptain = ({ isFirstRealMove = false } = {}) => {
-    if (!mapRef.current) return
+  if (!mapRef.current) return
 
-    const cameraOptions = {
-      center: [position.lng, position.lat],
-      zoom: 17,
-      pitch: 58,
-      bearing: getNavigationBearing(),
-      offset: [0, 120],
-      essential: true,
-    }
-
-    if (isFirstRealMove) {
-      mapRef.current.flyTo({
-        ...cameraOptions,
-        duration: 2600,
-        speed: 0.55,
-        curve: 1.6,
-      })
-
-      return
-    }
-
-    mapRef.current.easeTo({
-      ...cameraOptions,
-      duration: 900,
-      easing: (t) => 1 - Math.pow(1 - t, 3),
-    })
+  const cameraOptions = {
+    center: [position.lng, position.lat],
+    zoom: 17,
+    pitch: 58,
+    bearing: getNavigationBearing(),
+    offset: [0, 120],
+    essential: true,
   }
+
+  if (isFirstRealMove) {
+    mapRef.current.flyTo({
+      ...cameraOptions,
+      duration: 2600,
+      speed: 0.55,
+      curve: 1.6,
+    })
+
+    return
+  }
+
+  mapRef.current.easeTo({
+    ...cameraOptions,
+    duration: 900,
+    easing: (t) => 1 - Math.pow(1 - t, 3),
+  })
+}
 
   useEffect(() => {
     preloadVehicleImages()
@@ -610,29 +600,29 @@ const Map2 = ({
   }, [currentLocation])
 
   useEffect(() => {
-    if (!navigator.geolocation) return
+  if (!navigator.geolocation) return
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (currentLocation) return
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (currentLocation) return
 
-        realLocationFoundRef.current = true
+      realLocationFoundRef.current = true
 
-        setPosition({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        })
-      },
-      (err) => {
+      setPosition({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      })
+    },
+    (err) => {
 
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-        timeout: 10000,
-      }
-    )
-  }, [])
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000,
+    }
+  )
+}, [])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
@@ -729,21 +719,21 @@ const Map2 = ({
     }
   }, [])
 
-  useEffect(() => {
-    if (!mapRef.current) return
+useEffect(() => {
+  if (!mapRef.current) return
 
-    mapRef.current.flyTo({
-      center: [position.lng, position.lat],
-      zoom: 17,
-      pitch: 60,
-      bearing: getNavigationBearing(),
-      offset: [0, 120],
-      speed: 1.2,
-      curve: 1,
-    })
+  mapRef.current.flyTo({
+    center: [position.lng, position.lat],
+    zoom: 17,
+    pitch: 60,
+    bearing: getNavigationBearing(),
+    offset: [0, 120],
+    speed: 1.2,
+    curve: 1,
+  })
 
-    updateCaptainMarkerStyle()
-  }, [position])
+  updateCaptainMarkerStyle()
+}, [position])
 
   useEffect(() => {
     if (!mapRef.current) return
