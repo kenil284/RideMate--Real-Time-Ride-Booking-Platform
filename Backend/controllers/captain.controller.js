@@ -1,5 +1,5 @@
 import { validationResult } from "express-validator";
-import captainModel from "../models/captian.model.js";
+import captainModel from "../models/captain.model.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js";
 import { hashPassword, verifyPassword } from "../utils/password.util.js";
 import { getCaptainTodayDashboard } from "../services/captain.service.js";

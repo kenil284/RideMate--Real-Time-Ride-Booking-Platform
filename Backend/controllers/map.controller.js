@@ -1,7 +1,7 @@
-import captainModel from "../models/captian.model.js"
+import captainModel from "../models/captain.model.js"
 import { getDistanceTimeService } from "../services/maps.service.js"
 import { sendCaptainLocationToRider } from "../socket/socket.emit.js"
-import rideModel from "../Models/ride.model.js";
+import rideModel from "../models/ride.model.js";
 
 
 const getRouteMode = (vehicleType) => {

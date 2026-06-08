@@ -1,8 +1,8 @@
 import { validationResult } from "express-validator";
-import rideModel from "../Models/ride.model.js";
+import rideModel from "../models/ride.model.js";
 import { findNearbyCaptainsForRide } from "../services/captain.service.js";
 import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCancelledToCaptain, sendRideCancelledToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
-import captainModel from "../models/captian.model.js";
+import captainModel from "../models/captain.model.js";
 import { getDistanceTimeService } from "../services/maps.service.js";
 
 

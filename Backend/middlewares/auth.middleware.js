@@ -1,5 +1,5 @@
 import blackListTokenModel from "../models/blackListToken.model.js";
-import captainModel from "../models/captian.model.js";
+import captainModel from "../models/captain.model.js";
 import userModel from "../models/user.model.js";
 import { verifyAccessToken } from "../utils/jwt.util.js";
 

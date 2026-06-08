@@ -1,4 +1,4 @@
-import captainModel from "../models/captian.model.js";
+import captainModel from "../models/captain.model.js";
 import refreshTokenModel from "../models/refreshToken.model.js";
 import { generateAccessToken, verifyRefreshToken } from "../utils/jwt.util.js";
 

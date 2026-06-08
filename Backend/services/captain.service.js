@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import rideModel from "../Models/ride.model.js";
-import captainModel from "../models/captian.model.js";
+import rideModel from "../models/ride.model.js";
+import captainModel from "../models/captain.model.js";
 
 export const getCaptainTodayDashboard = async (captainId) => {
   const startOfDay = new Date();

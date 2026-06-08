@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import cookie from "cookie";
 import { verifyAccessToken } from "../utils/jwt.util.js";
-import captainModel from "../models/captian.model.js";
+import captainModel from "../models/captain.model.js";
 import userModel from "../models/user.model.js";
 
 
