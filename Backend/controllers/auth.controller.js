@@ -30,7 +30,7 @@ export const refreshAccessTokenController = async (req, res) => {
 
     const decoded = verifyRefreshToken(refreshToken);
 
-    console.log("deocdd refresh token is",decoded)
+
 
     const accessToken = generateAccessToken(decoded.userId);
 
@@ -97,7 +97,7 @@ export const refreshCaptainAccessTokenController = async (req, res) => {
       accessToken,
     })
   } catch (error) {
-    console.log(error)
+
     return res.status(401).json({
       message: "Invalid or expired refresh token",
     })

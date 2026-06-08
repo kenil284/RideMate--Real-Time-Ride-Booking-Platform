@@ -25,17 +25,17 @@ export const enableNotificationSound = async () => {
     isSoundUnlocked = true;
     isSoundEnabled = true;
 
-    console.log("Notification sound enabled");
+
     return true;
   } catch (error) {
-    console.log("Sound enable failed:", error.message);
+
     return false;
   }
 };
 
 export const disableNotificationSound = () => {
   isSoundEnabled = false;
-  console.log("Notification sound disabled");
+
 };
 
 export const playRideRequestSound = async () => {
@@ -43,7 +43,7 @@ export const playRideRequestSound = async () => {
     prepareNotificationSound();
 
     if (!isSoundUnlocked || !isSoundEnabled) {
-      console.log("Sound disabled or not unlocked");
+
       return;
     }
 
@@ -54,9 +54,9 @@ export const playRideRequestSound = async () => {
       navigator.vibrate([200, 100, 200]);
     }
 
-    console.log("Ride request sound played");
+
   } catch (error) {
-    console.log("Sound play failed:", error.message);
+
   }
 };
 
@@ -70,5 +70,5 @@ export const stopRideRequestSound = () => {
     navigator.vibrate(0)
   }
 
-  console.log("Ride request sound stopped")
+
 }

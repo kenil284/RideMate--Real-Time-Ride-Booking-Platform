@@ -68,7 +68,7 @@ const Map = () => {
         setPosition([pos.coords.latitude, pos.coords.longitude]);
       },
       (err) => {
-        console.log("Location error:", err.message);
+
       },
       {
         enableHighAccuracy: true,

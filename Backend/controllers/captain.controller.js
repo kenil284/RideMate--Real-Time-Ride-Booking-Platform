@@ -5,6 +5,14 @@ import { hashPassword, verifyPassword } from "../utils/password.util.js";
 import { getCaptainTodayDashboard } from "../services/captain.service.js";
 import refreshTokenModel from "../models/refreshToken.model.js";
 
+const isProduction = process.env.NODE_ENV === "production"
+
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax"
+}
+
 /**
  * @name registerCaptainController
  * @description Register a new captain, expect fullname:{firstname,lastname}, email, password, phone, and vehicle details
@@ -151,7 +159,7 @@ export const loginCaptainController = async (req, res) => {
 
         const isPasswordValid = await verifyPassword(password, captain.password);
 
-        console.log("Password validation result:", isPasswordValid);
+
 
         if (!isPasswordValid) {
             return res.status(400).json({
@@ -162,15 +170,15 @@ export const loginCaptainController = async (req, res) => {
         const accessToken = generateAccessToken(captain._id);
         const refreshToken = generateRefreshToken(captain._id);
 
-        await refreshTokenModel.create({token: refreshToken,user: captain._id});
+        await refreshTokenModel.create({ token: refreshToken, user: captain._id });
 
         res.cookie("captainAccessToken", accessToken, {
-            httpOnly: true,
+            ...cookieOptions,
             maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_EXPIRE) * 60 * 60 * 1000
         });
 
         res.cookie("captainRefreshToken", refreshToken, {
-            httpOnly: true,
+            ...cookieOptions,
             maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_EXPIRE) * 24 * 60 * 60 * 1000
         });
 
@@ -214,8 +222,19 @@ export const getCaptainProfileController = async (req, res) => {
  */
 export const logoutCaptainController = async (req, res) => {
     try {
-        res.clearCookie("captainAccessToken");
-        res.clearCookie("captainRefreshToken");
+
+         if (accessToken) {
+            await blackListTokenModel.create({ token: accessToken });
+        }
+
+        if (refreshToken) {
+            await refreshTokenModel.deleteOne({ token: refreshToken });
+        }
+
+        res.clearCookie("userAccessToken", cookieOptions)
+        res.clearCookie("userRefreshToken", cookieOptions)
+
+    
         res.status(200).json({
             message: "Captain logged out successfully",
         });

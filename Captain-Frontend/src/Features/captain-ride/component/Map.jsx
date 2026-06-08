@@ -51,7 +51,7 @@ const Map = ({ pickup, destination, routeCoordinates = [] }) => {
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      console.log("Geolocation is not supported")
+
       return
     }
 
@@ -60,7 +60,7 @@ const Map = ({ pickup, destination, routeCoordinates = [] }) => {
         setPosition([pos.coords.latitude, pos.coords.longitude])
       },
       (err) => {
-        console.log("Location error:", err.message)
+
       },
       {
         enableHighAccuracy: true,

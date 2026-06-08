@@ -12,9 +12,15 @@ import blackListTokenModel from "../models/blackListToken.model.js";
  * @access Public
  */
 
+
+const isProduction = process.env.NODE_ENV === "production"
+
 const cookieOptions = {
-  httpOnly: true
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax"
 }
+
 
 export const registerUserController = async (req, res) => {
 

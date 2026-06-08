@@ -35,7 +35,7 @@ const UserContextProvider = ({ children }) => {
 
       return true
     } catch (error) {
-      console.log(error)
+
       if (error.response?.status !== 400) {
         setuserData(null)
         setLogin(false)

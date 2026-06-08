@@ -12,12 +12,12 @@ export const useCaptainSocket = ({ setCurrentRide,setRequests, setStage }) => {
     const socket = connectSocket();
 
     socket.on("connect", () => {
-      console.log("Captain socket connected:", socket.id);
+
       setSocketstate(socket);
     });
 
     socket.on("disconnect", () => {
-      console.log("Captain socket disconnected");
+
       setSocketstate(null);
     });
 
@@ -33,7 +33,7 @@ export const useCaptainSocket = ({ setCurrentRide,setRequests, setStage }) => {
 
     socket.on("ride-request-expired", ({ rideId }) => {
 
-      console.log("ride request expired")
+
       setRequests((prev) => {
         const updatedRequests = prev.filter((ride) => ride._id !== rideId)
 

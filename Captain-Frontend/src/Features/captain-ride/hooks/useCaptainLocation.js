@@ -37,7 +37,7 @@ export const useCaptainLocation = ({ isOnline }) => {
 
                 setLastLocation({ lat, lng });
 
-                console.log("Captain location updated:", lat, lng);
+
             })
         }
 

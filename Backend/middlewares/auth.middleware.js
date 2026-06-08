@@ -17,7 +17,7 @@ export const authUser = async (req, res, next) => {
     try {
         const decoded = verifyAccessToken(token);
 
-        console.log(decoded)
+
 
         const user = await userModel.findById(decoded.userId);
 

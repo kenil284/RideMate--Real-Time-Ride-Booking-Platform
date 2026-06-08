@@ -83,7 +83,7 @@ export const useCaptainDestinationRoute = ({ stage, currentRide }) => {
                     lng: currentLng,
                 }
             } catch (error) {
-                console.log(error.response?.data?.message || error.message)
+
             } finally {
                 isRunningRef.current = false
             }
@@ -120,7 +120,7 @@ export const useCaptainDestinationRoute = ({ stage, currentRide }) => {
         watchId = navigator.geolocation.watchPosition(
             handleLocationChange,
             () => {
-                console.log("Unable to watch captain destination location")
+
             },
             {
                 enableHighAccuracy: true,

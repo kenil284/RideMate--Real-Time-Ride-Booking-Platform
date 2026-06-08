@@ -126,12 +126,12 @@ const CaptainHome = () => {
 
             openalert("Success", "Logout successfully")
 
-            navigate("/login")
+            navigate("/login", { replace: true })
         } catch (error) {
             setCaptainData(null)
             setCaptainLogin(false)
 
-            navigate("/login")
+            navigate("/login", { replace: true })
         }
     }
 
@@ -219,7 +219,7 @@ const CaptainHome = () => {
             openalert("Success", data?.message || "Ride cancelled successfully")
 
         } catch (error) {
-            console.log(error)
+
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to cancel ride"
@@ -276,7 +276,7 @@ const CaptainHome = () => {
             openalert("Success", data.message || "Ride completed successfully")
 
         } catch (error) {
-            console.log(error)
+
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to complete ride"

@@ -193,12 +193,12 @@ const Ride = () => {
 
             openalert("Success", "Logout successfully")
 
-            navigate("/login")
+            navigate("/login",{ replace: true })
         } catch (error) {
             setuserData(null)
             setLogin(false)
 
-            navigate("/login")
+            navigate("/login",{ replace: true })
         }
     }
 
@@ -251,7 +251,7 @@ const Ride = () => {
     };
 
     useEffect(() => {
-        console.log("Updated rideData:", rideData);
+
     }, [rideData]);
 
 
@@ -348,11 +348,11 @@ const Ride = () => {
             })
 
             resetRideData()
-            console.log(rideData)
+
             setStage("location")
 
         } catch (error) {
-            console.log(error)
+
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to cancel ride"

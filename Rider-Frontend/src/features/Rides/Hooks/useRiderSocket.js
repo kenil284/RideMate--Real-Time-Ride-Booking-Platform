@@ -27,7 +27,7 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
     })
 
     socket.on("ride-accepted", ({ ride }) => {
-      console.log("Ride accepted:", ride)
+
 
       setRideData((prev) => ({
         ...prev,
@@ -85,7 +85,7 @@ export const useRiderSocket = ({ setRideData, setStage }) => {
     })
 
     socket.on("ride-completed", ({ ride }) => {
-      console.log("Ride completed:", ride)
+
 
       setRideData((prev) => ({
         ...prev,

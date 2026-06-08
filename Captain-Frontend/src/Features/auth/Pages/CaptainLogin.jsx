@@ -21,7 +21,7 @@ const CaptainLogin = () => {
       return
     }
 
-    navigate("/captain-home")
+    navigate("/captain-home", { replace: true })
   }
 
   return (

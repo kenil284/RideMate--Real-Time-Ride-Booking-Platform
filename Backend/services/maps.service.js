@@ -187,7 +187,7 @@ export const getSuggestionsService = async (input) => {
 
         return suggestions;
     } catch (error) {
-        console.log(error)
+
     }
 
 

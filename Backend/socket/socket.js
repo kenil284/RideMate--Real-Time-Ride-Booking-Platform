@@ -79,15 +79,15 @@ export const initSocket = (server) => {
   });
 
   captainSocket.on("connection", (socket) => {
-    console.log("Captain connected:", socket.captainId, socket.id);
+
 
     // room name is captain collection _id
     socket.join(socket.captainId);
 
-    console.log("Captain joined room:", socket.captainId);
+
 
     socket.on("disconnect", async () => {
-      console.log("Captain disconnected:", socket.captainId, socket.id);
+
       try {
         await captainModel.findByIdAndUpdate(socket.captainId, {
           $set: {
@@ -102,15 +102,15 @@ export const initSocket = (server) => {
 
 
   userSocket.on("connection", (socket) => {
-    console.log("User connected:", socket.userId, socket.id);
+
 
     // room name is user collection id
     socket.join(socket.userId);
 
-    console.log("User joined room:", socket.userId);
+
 
     socket.on("disconnect", () => {
-      console.log("User disconnected:", socket.userId, socket.id);
+
 
     })
   })

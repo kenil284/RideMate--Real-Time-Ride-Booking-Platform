@@ -59,6 +59,6 @@ export const cancelRideByUserService = async ({ rideId, cancelReason }) => {
         })
         return res.data
     } catch (error) {
-        console.log(error)
+
     }
 }

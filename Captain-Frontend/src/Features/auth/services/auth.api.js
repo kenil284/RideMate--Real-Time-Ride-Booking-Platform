@@ -24,7 +24,7 @@ export async function login(data) {
 }
 
 export const logout = async () => {
-    console.log("Reached")
+
     const response = await api.post('/api/captain/logout')
 
     return response.data

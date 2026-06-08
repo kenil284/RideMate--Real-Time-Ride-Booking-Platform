@@ -704,7 +704,7 @@ const Map2 = ({
         })
       },
       (err) => {
-        console.log("Location error:", err.message)
+
       },
       {
         enableHighAccuracy: true,

@@ -51,7 +51,7 @@ export const removeRideRequestFromCaptains = (rideId) => {
 export const sendCaptainLocationToRider = ({ riderId, rideId, lat, lng,distanceKm,durationMin, routeCoordinates }) => {
   const userSocket = getUserSocket()
 
-  console.log("captain location updated")
+
 
 
   userSocket.to(riderId.toString()).emit("captain-location-updated", {

@@ -77,7 +77,7 @@ export const createRideController = async (req, res) => {
 
         setTimeout(async () => {
             try {
-                console.log("no captain found")
+
                 const currentRide = await rideModel.findById(ride._id)
 
                 if (!currentRide) return
@@ -95,7 +95,7 @@ export const createRideController = async (req, res) => {
 
 
             } catch (error) {
-                console.log("no captain timeout error:", error.message)
+
             }
         }, 8000)
 
@@ -105,7 +105,7 @@ export const createRideController = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error)
+
         return res.status(500).json({
             message: "Failed to create ride",
         });
@@ -268,7 +268,7 @@ export const acceptRideController = async (req, res) => {
         })
 
     } catch (error) {
-        console.log(error)
+
         return res.status(500).json({
             message: "Failed to accept ride",
         })
@@ -330,7 +330,7 @@ export const startRideController = async (req, res) => {
         })
 
     } catch (error) {
-        console.log(error)
+
         return res.status(500).json({
             message: "Failed to start ride",
         })
@@ -428,7 +428,7 @@ export const completeRideController = async (req, res) => {
         })
 
     } catch (error) {
-        console.log(error)
+
 
         return res.status(500).json({
             message: "Failed to complete ride",
@@ -492,7 +492,7 @@ export const cancelRideByUserController = async (req, res) => {
         })
 
     } catch (error) {
-        console.log(error)
+
         return res.status(500).json({
             message: "Failed to cancel ride",
         })
@@ -547,7 +547,7 @@ export const cancelRideByCaptainController = async (req, res) => {
         })
 
     } catch (error) {
-        console.log(error)
+
 
         return res.status(500).json({
             message: "Failed to cancel ride",

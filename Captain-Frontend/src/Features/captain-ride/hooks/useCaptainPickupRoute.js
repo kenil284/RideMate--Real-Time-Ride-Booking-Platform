@@ -105,7 +105,7 @@ export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) =>
                     }, 3000)
                 }
             } catch (error) {
-                console.log(error.response?.data?.message || error.message)
+
             } finally {
                 isRunningRef.current = false
             }
@@ -145,7 +145,7 @@ export const useCaptainPickupRoute = ({ stage, currentRide, onSendLocation }) =>
         watchId = navigator.geolocation.watchPosition(
             handleLocationChange,
             () => {
-                console.log("Unable to watch captain current location")
+
             },
             {
                 enableHighAccuracy: true,
