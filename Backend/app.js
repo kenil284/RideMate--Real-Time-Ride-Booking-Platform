@@ -10,10 +10,17 @@ import mapRouter from "./routes/map.route.js";
 
 export const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.RIDER_FRONTEND_URL,
+  process.env.CAPTAIN_FRONTEND_URL
+]
+
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174","https://cz0q5kx4-5173.inc1.devtunnels.ms"],
+  origin: allowedOrigins,
   credentials: true
-}));
+}))
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({extended: true})); // Form data
