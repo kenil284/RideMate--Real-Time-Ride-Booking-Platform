@@ -1,6 +1,6 @@
 import { FaCar, FaClock, FaRoad } from "react-icons/fa6";
 
-const RideRequest = ({ ride, onAccept, onCancel }) => {
+const RideRequest = ({ ride, onAccept, onCancel, acceptingRide }) => {
   if (!ride) return null;
 
   const trimAddress = (address = "", limit = 62) => {
@@ -118,6 +118,7 @@ const RideRequest = ({ ride, onAccept, onCancel }) => {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => onCancel(ride)}
+            disabled={acceptingRide}
             className="h-14 rounded-2xl bg-gray-100 text-black font-bold active:scale-95 transition"
           >
             Cancel
@@ -125,9 +126,23 @@ const RideRequest = ({ ride, onAccept, onCancel }) => {
 
           <button
             onClick={() => onAccept(ride)}
-            className="h-14 rounded-2xl bg-black text-white font-bold shadow-lg active:scale-95 transition"
+            disabled={acceptingRide}
+            className={`
+    h-14 rounded-2xl font-bold shadow-lg transition flex items-center justify-center gap-2
+    ${acceptingRide
+                ? "bg-black/80 text-white cursor-not-allowed"
+                : "bg-black text-white active:scale-95"
+              }
+  `}
           >
-            Accept
+            {acceptingRide ? (
+              <>
+                <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                Accepting...
+              </>
+            ) : (
+              "Accept"
+            )}
           </button>
         </div>
       </div>

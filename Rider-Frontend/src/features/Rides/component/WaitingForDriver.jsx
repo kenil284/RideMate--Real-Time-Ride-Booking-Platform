@@ -1,13 +1,12 @@
 import React from "react"
 import { FaPhone, FaShieldHalved } from "react-icons/fa6"
 
-const WaitingForDriver = ({ rideData , onCancelRide}) => {
+const WaitingForDriver = ({ rideData, onCancelRide, isRideCancelling }) => {
   const captain = rideData?.captain
   const captainInfo = rideData?.captainToPickupInfo
 
-  const captainName = `${captain?.fullname?.firstname || ""} ${
-    captain?.fullname?.lastname || ""
-  }`.trim()
+  const captainName = `${captain?.fullname?.firstname || ""} ${captain?.fullname?.lastname || ""
+    }`.trim()
 
   const arrivalTime =
     captainInfo?.displayDuration ||
@@ -95,9 +94,23 @@ const WaitingForDriver = ({ rideData , onCancelRide}) => {
 
         <button
           onClick={onCancelRide}
-          className="h-14 rounded-2xl bg-gray-100 text-gray-800 font-bold flex items-center justify-center active:scale-95 transition"
+          disabled={isRideCancelling}
+          className={`
+    h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition
+    ${isRideCancelling
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : "bg-gray-100 text-gray-800 active:scale-95"
+            }
+  `}
         >
-          Cancel Ride
+          {isRideCancelling ? (
+            <>
+              <span className="w-5 h-5 rounded-full border-2 border-gray-400/30 border-t-gray-700 animate-spin" />
+              Cancelling...
+            </>
+          ) : (
+            "Cancel Ride"
+          )}
         </button>
       </div>
     </div>

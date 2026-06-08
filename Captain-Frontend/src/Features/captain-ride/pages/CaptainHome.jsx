@@ -135,8 +135,14 @@ const CaptainHome = () => {
         }
     }
 
+    const [acceptingRide, setAcceptingRide] = useState(false)
+
     const handleAcceptRide = async (ride) => {
         try {
+            if (acceptingRide) return
+
+            setAcceptingRide(true)
+
             const data = await acceptRideService(ride._id)
 
             setCurrentRide(data.ride)
@@ -156,6 +162,9 @@ const CaptainHome = () => {
                 error.response?.data?.message || error.message
             )
         }
+        finally {
+            setAcceptingRide(false)
+        }
     }
 
 
@@ -173,7 +182,7 @@ const CaptainHome = () => {
             setCurrentRide(data.ride)
             setStage("navigating")
         } catch (error) {
-        
+
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to start ride"
@@ -202,9 +211,15 @@ const CaptainHome = () => {
         })
     }
 
+    const [isCurrentRideCancelling, setIsCurrentRideCancelling] = useState(false)
+
 
     const handleCurrentCancelRide = async () => {
         try {
+            if (isCurrentRideCancelling) return
+
+            setIsCurrentRideCancelling(true)
+
             const rideId = currentRide?._id
 
             if (!rideId) return
@@ -219,11 +234,12 @@ const CaptainHome = () => {
             openalert("Success", data?.message || "Ride cancelled successfully")
 
         } catch (error) {
-
             openalert(
                 "Error",
                 error.response?.data?.message || "Failed to cancel ride"
             )
+        } finally {
+            setIsCurrentRideCancelling(false)
         }
     }
 
@@ -256,33 +272,35 @@ const CaptainHome = () => {
                 : null
 
 
-
+    const [isRideCompleting, setIsRideCompleting] = useState(false)
     const handleCompleteRide = async () => {
-        try {
+    try {
+        if (isRideCompleting) return
 
-            const data = await completeRideService(currentRide._id)
+        setIsRideCompleting(true)
 
-            setCurrentRide(null)
-            setStage("looking")
+        const data = await completeRideService(currentRide._id)
 
-            setCaptainData((prev) => ({
-                ...prev,
-                currentRide: null,
-                totalRides: (prev.totalRides || 0) + 1,
-            }))
+        setCurrentRide(null)
+        setStage("looking")
 
+        setCaptainData((prev) => ({
+            ...prev,
+            currentRide: null,
+            totalRides: (prev.totalRides || 0) + 1,
+        }))
 
+        openalert("Success", data.message || "Ride completed successfully")
 
-            openalert("Success", data.message || "Ride completed successfully")
-
-        } catch (error) {
-
-            openalert(
-                "Error",
-                error.response?.data?.message || "Failed to complete ride"
-            )
-        }
+    } catch (error) {
+        openalert(
+            "Error",
+            error.response?.data?.message || "Failed to complete ride"
+        )
+    } finally {
+        setIsRideCompleting(false)
     }
+}
 
     return (
         <div className="fixed inset-0 w-screen h-[100dvh] overflow-hidden bg-white">
@@ -335,6 +353,7 @@ const CaptainHome = () => {
                         ride={requests[0]}
                         onAccept={handleAcceptRide}
                         onCancel={handleCancelRide}
+                        acceptingRide={acceptingRide}
                     />
                 )}
 
@@ -343,6 +362,7 @@ const CaptainHome = () => {
                         ride={currentRide}
                         onArrived={() => setStage("otp")}
                         onCancel={handleCurrentCancelRide}
+                        isCurrentRideCancelling={isCurrentRideCancelling}
                     />
                 )}
 
@@ -376,6 +396,7 @@ const CaptainHome = () => {
                     <NavigatingRide
                         ride={currentRide}
                         onComplete={handleCompleteRide}
+                        isRideCompleting={isRideCompleting}
                     />
                 )}
             </BottomSheet>

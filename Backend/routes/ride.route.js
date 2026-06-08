@@ -40,20 +40,76 @@ export const createRideValidator = [
 ]
 
 const rideRouter = Router()
+/**
+ * @route POST /api/ride/create-ride
+ * @description Create a new ride request for the logged-in rider
+ * @access Private
+ * @controller createRideController
+ */
 
 rideRouter.post("/create-ride", authUser, createRideValidator, createRideController)
 
+/**
+ * @route GET /api/ride/get-active-ride
+ * @description Get the current active ride of the logged-in rider
+ * @access Private
+ * @controller getActiveRideController
+ */
+
 rideRouter.get("/get-active-ride",authUser,getActiveRideController)
+
+/**
+ * @route PUT /api/ride/accept/:rideId
+ * @description Accept a ride request by captain
+ * @access Private
+ * @controller acceptRideController
+ */
 
 rideRouter.put("/accept/:rideId", authCaptain, acceptRideController)
 
+/**
+ * @route GET /api/ride/captain-active-ride
+ * @description Get the current active ride of the logged-in captain
+ * @access Private
+ * @controller getCaptainActiveRideController
+ */
+
 rideRouter.get("/captain-active-ride",authCaptain,getCaptainActiveRideController)
+
+/**
+ * @route POST /api/ride/start/:rideId
+ * @description Start a ride after OTP verification
+ * @access Private
+ * @controller startRideController
+ */
 
 rideRouter.post("/start/:rideId",authCaptain,startRideController)
 
+/**
+ * @route POST /api/ride/complete/:rideId
+ * @description Complete a started ride by captain
+ * @access Private
+ * @controller completeRideController
+ */
+
 rideRouter.post("/complete/:rideId",authCaptain,completeRideController)
 
+/**
+ * @route POST /api/ride/cancel/user/:rideId
+ * @description Cancel a ride by rider
+ * @access Private
+ * @controller cancelRideByUserController
+ */
+
 rideRouter.post("/cancel/user/:rideId",authUser,cancelRideByUserController)
+
+/**
+ * @route POST /api/ride/cancel/captain/:rideId
+ * @description Cancel a ride by captain
+ * @access Private
+ * @controller cancelRideByCaptainController
+ */
+
 
 rideRouter.post("/cancel/captain/:rideId",authCaptain,cancelRideByCaptainController)
 

@@ -270,8 +270,8 @@ export const getCaptainTodayDashboardController = async (req, res) => {
 };
 
 /**
- * @name getCaptainTodayDashboardController
- * @description Updating Captain Availability online or offline by boolean value
+ * @name updateCaptainAvalabilityController
+ * @description Update captain availability status to online or offline
  * @access Private
  */
 
@@ -312,7 +312,7 @@ export const updateCaptainAvalabilityController = async (req, res) => {
 
 /**
  * @name updateCaptainLocationController
- * @description Updating Captain Location Frequently
+ * @description Update captain current location using latitude and longitude
  * @access Private
  */
 

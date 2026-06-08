@@ -1,7 +1,7 @@
 import React from "react"
 import { FaFlagCheckered, FaLocationArrow } from "react-icons/fa6"
 
-const NavigatingRide = ({ ride, onComplete }) => {
+const NavigatingRide = ({ ride, onComplete, isRideCompleting }) => {
   const fareText = ride?.vehicle?.displayFare || `₹${ride?.fare || 0}`
 
   const paymentText =
@@ -48,10 +48,25 @@ const NavigatingRide = ({ ride, onComplete }) => {
 
         <button
           onClick={onComplete}
-          className="h-full flex-1 rounded-[15px] bg-gray-950 text-white text-[14px] font-extrabold flex items-center justify-center gap-2 active:scale-[0.98] transition shadow-[0_14px_28px_rgba(0,0,0,0.25)]"
+          disabled={isRideCompleting}
+          className={`
+    h-full flex-1 rounded-[15px] text-white text-[14px] font-extrabold
+    flex items-center justify-center gap-2 transition
+    shadow-[0_14px_28px_rgba(0,0,0,0.25)]
+    ${isRideCompleting
+              ? "bg-gray-950/80 cursor-not-allowed"
+              : "bg-gray-950 active:scale-[0.98]"
+            }
+  `}
         >
-          <FaFlagCheckered className="text-xs" />
-          Complete
+          {isRideCompleting ? (
+            <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+          ) : (
+            <>
+              <FaFlagCheckered className="text-xs" />
+              Complete
+            </>
+          )}
         </button>
       </div>
     </div>

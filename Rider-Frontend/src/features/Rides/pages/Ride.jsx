@@ -256,6 +256,8 @@ const Ride = () => {
 
 
     const confirmRide = async () => {
+         if (isRideCreating) return
+
         const payload = {
             pickup: rideData.pickup,
             destination: rideData.destination,
@@ -336,29 +338,36 @@ const Ride = () => {
         })
     }
 
-    const handleCancelRide = async () => {
-        try {
-            const rideId = rideData._id || rideData.rideId
+    const [isRideCancelling, setIsRideCancelling] = useState(false)
 
-            if (!rideId) return
+   const handleCancelRide = async () => {
+    try {
+        if (isRideCancelling) return
 
-            await cancelRideByUserService({
-                rideId,
-                cancelReason: "Cancelled by rider",
-            })
+        setIsRideCancelling(true)
 
-            resetRideData()
+        const rideId = rideData._id || rideData.rideId
 
-            setStage("location")
+        if (!rideId) return
 
-        } catch (error) {
+        await cancelRideByUserService({
+            rideId,
+            cancelReason: "Cancelled by rider",
+        })
 
-            openalert(
-                "Error",
-                error.response?.data?.message || "Failed to cancel ride"
-            )
-        }
+        resetRideData()
+
+        setStage("location")
+
+    } catch (error) {
+        openalert(
+            "Error",
+            error.response?.data?.message || "Failed to cancel ride"
+        )
+    } finally {
+        setIsRideCancelling(false)
     }
+}
 
 
     const isCaptainTracking =
@@ -482,6 +491,7 @@ const Ride = () => {
                         rideData={rideData}
                         onBack={() => setStage("vehicle")}
                         onConfirm={confirmRide}
+                        isRideCreating={isRideCreating}
                     />
                 )}
 
@@ -493,6 +503,7 @@ const Ride = () => {
                     <WaitingForDriver
                         rideData={rideData}
                         onCancelRide={handleCancelRide}
+                        isRideCancelling={isRideCancelling}
                     />
                 )}
 

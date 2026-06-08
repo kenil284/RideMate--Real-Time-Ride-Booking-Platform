@@ -104,12 +104,19 @@ captainRouter.put("/update-captain-availability",authCaptain,updateCaptainAvalab
 
 /**
  * @route PUT /api/captain/update-location
- * @description update captain location frequently 
+ * @description Update captain current location using latitude and longitude
  * @access Private
+ * @controller updateCaptainLocationController
  */
 
 captainRouter.put("/update-location",authCaptain,updateCaptainLocationController)
 
+/**
+ * @route POST /api/captain/refresh-token
+ * @description Generate a new captain access token using refresh token
+ * @access Public
+ * @controller refreshCaptainAccessTokenController
+ */
 
 captainRouter.post("/refresh-token",refreshCaptainAccessTokenController)
 

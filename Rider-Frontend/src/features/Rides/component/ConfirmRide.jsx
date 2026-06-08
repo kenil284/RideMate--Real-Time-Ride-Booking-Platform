@@ -6,8 +6,8 @@ const vehicleImages = {
   auto: "/Home_Page/Auto.png",
 };
 
-const ConfirmRide = ({ rideData, onBack, onConfirm }) => {
-  
+const ConfirmRide = ({ rideData, onBack, onConfirm, isRideCreating }) => {
+
   const vehicle = rideData?.vehicle;
 
   return (
@@ -137,10 +137,24 @@ const ConfirmRide = ({ rideData, onBack, onConfirm }) => {
       <div className="shrink-0 pt-3 bg-white">
         <button
           type="button"
+          disabled={isRideCreating}
           onClick={onConfirm}
-          className="w-full h-[54px] bg-black text-white rounded-xl font-bold text-base active:scale-[0.97] transition"
+          className={`
+      w-full h-[54px] rounded-xl font-bold text-base transition flex items-center justify-center gap-2
+      ${isRideCreating
+              ? "bg-black/80 text-white cursor-not-allowed"
+              : "bg-black text-white active:scale-[0.97]"
+            }
+    `}
         >
-          Confirm Ride
+          {isRideCreating ? (
+            <>
+              <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              Confirming ride...
+            </>
+          ) : (
+            "Confirm Ride"
+          )}
         </button>
       </div>
     </div>

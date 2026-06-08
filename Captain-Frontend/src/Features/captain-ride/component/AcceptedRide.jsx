@@ -1,12 +1,10 @@
 import React from "react"
 import { FaLocationDot, FaXmark } from "react-icons/fa6"
 
-const AcceptedRide = ({ ride, onArrived, onCancel }) => {
+const AcceptedRide = ({ ride, onArrived, onCancel, isCurrentRideCancelling }) => {
   const rider = ride?.rider
 
-  const riderName = `${rider?.fullname?.firstname || ""} ${
-    rider?.fullname?.lastname || ""
-  }`.trim()
+  const riderName = (rider?.fullname?.firstname || "Rider").trim()
 
   return (
     <div className="h-full flex items-center gap-3">
@@ -30,10 +28,25 @@ const AcceptedRide = ({ ride, onArrived, onCancel }) => {
 
       <button
         onClick={onCancel}
-        className="h-12 px-4 rounded-2xl bg-gray-100 text-gray-700 text-[13px] font-bold flex items-center justify-center gap-2 active:scale-95 transition"
+        disabled={isCurrentRideCancelling}
+        className={`
+  h-12 w-[98px] rounded-2xl text-[13px] font-extrabold 
+  flex items-center justify-center gap-2 transition
+  border shadow-[0_8px_20px_rgba(0,0,0,0.05)]
+  ${isCurrentRideCancelling
+            ? "bg-white text-gray-400 border-gray-200 cursor-not-allowed"
+            : "bg-white text-gray-800 border-gray-200 active:scale-95"
+          }
+`}
       >
-        <FaXmark className="text-xs" />
-        Cancel
+        {isCurrentRideCancelling ? (
+          <span className="w-4 h-4 rounded-full border-2 border-gray-300 border-t-gray-800 animate-spin" />
+        ) : (
+          <>
+            <FaXmark className="text-xs text-gray-500" />
+            Cancel
+          </>
+        )}
       </button>
 
       <button

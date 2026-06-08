@@ -5,6 +5,11 @@ import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAccept
 import captainModel from "../models/captain.model.js";
 import { getDistanceTimeService } from "../services/maps.service.js";
 
+/**
+ * @name createRideController
+ * @description Create a new ride request for the logged-in rider
+ * @access Private
+ */
 
 export const createRideController = async (req, res) => {
     try {
@@ -127,6 +132,11 @@ const getRouteMode = (vehicleType) => {
     return "drive"
 }
 
+/**
+ * @name getActiveRideController
+ * @description Get the current active ride of the logged-in rider
+ * @access Private
+ */
 export const getActiveRideController = async (req, res) => {
     try {
         const rider = req.userId
@@ -189,6 +199,12 @@ export const getActiveRideController = async (req, res) => {
     }
 }
 
+/**
+ * @name getCaptainActiveRideController
+ * @description Get the current active ride of the logged-in captain
+ * @access Private
+ */
+
 export const getCaptainActiveRideController = async (req, res) => {
     try {
         const captain = req.captainId
@@ -214,6 +230,12 @@ export const getCaptainActiveRideController = async (req, res) => {
         })
     }
 }
+
+/**
+ * @name acceptRideController
+ * @description Accept an available ride request by captain
+ * @access Private
+ */
 
 export const acceptRideController = async (req, res) => {
     try {
@@ -274,6 +296,13 @@ export const acceptRideController = async (req, res) => {
         })
     }
 }
+
+/**
+ * @name startRideController
+ * @description Start a ride after verifying the rider OTP
+ * @access Private
+ */
+
 
 export const startRideController = async (req, res) => {
     try {
@@ -337,6 +366,12 @@ export const startRideController = async (req, res) => {
     }
 }
 
+/**
+ * @name getCaptainToDestinationRouteController
+ * @description Get route from captain current location to ride destination
+ * @access Private
+ */
+
 export const getCaptainToDestinationRouteController = async (req, res) => {
     try {
         const captainId = req.captainId
@@ -386,6 +421,11 @@ export const getCaptainToDestinationRouteController = async (req, res) => {
     }
 }
 
+/**
+ * @name completeRideController
+ * @description Complete a started ride by captain
+ * @access Private
+ */
 export const completeRideController = async (req, res) => {
     try {
         const captainId = req.captainId
@@ -436,7 +476,11 @@ export const completeRideController = async (req, res) => {
     }
 }
 
-
+/**
+ * @name cancelRideByUserController
+ * @description Cancel a ride by the logged-in rider
+ * @access Private
+ */
 export const cancelRideByUserController = async (req, res) => {
     try {
         const rider = req.userId
@@ -499,6 +543,11 @@ export const cancelRideByUserController = async (req, res) => {
     }
 }
 
+/**
+ * @name cancelRideByCaptainController
+ * @description Cancel a ride by the logged-in captain
+ * @access Private
+ */
 export const cancelRideByCaptainController = async (req, res) => {
     try {
         const captainId = req.captainId
