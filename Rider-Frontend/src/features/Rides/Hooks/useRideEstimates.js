@@ -17,7 +17,9 @@ const useRideEstimates = () => {
                 destination,
             });
 
-            setVehicleOptions(data.vehicleOptions || [])
+            const options = data.vehicleOptions || []
+
+            setVehicleOptions(options);
 
             return options;
 
