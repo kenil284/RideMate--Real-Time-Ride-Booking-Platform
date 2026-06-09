@@ -22,13 +22,14 @@ const Map2 = ({
   const captainMarkerRef = useRef(null)
   const pickupMarkerRef = useRef(null)
   const routeCoordinatesRef = useRef([])
+  const routeCanvasRef = useRef(null)
   const lastVehicleImageRef = useRef("")
   const fallbackDoneRef = useRef(false)
   const realLocationFoundRef = useRef(false)
   const firstRealLocationFlyDoneRef = useRef(false)
-
   const firstLocationFlyDoneRef = useRef(false)
   const isMapLoadedRef = useRef(false)
+  const lastValidRouteRef = useRef([])
 
   const defaultPosition = {
     lat: 21.1702,
@@ -99,16 +100,47 @@ const Map2 = ({
     pickupMarkerRef.current = null
   }
 
-  const clearRoute = (map) => {
-    if (!map) return
+  const clearRouteCanvas = () => {
+    const canvas = routeCanvasRef.current
 
-    if (map.getLayer("route-line")) {
-      map.removeLayer("route-line")
+    if (!canvas) return
+
+    const ctx = canvas.getContext("2d")
+
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }
+
+  const getRouteCanvas = (map) => {
+    if (!map) return null
+
+    const canvasContainer = map.getCanvasContainer()
+
+    if (!canvasContainer) return null
+
+    canvasContainer.style.position = "relative"
+
+    if (!routeCanvasRef.current) {
+      const canvas = document.createElement("canvas")
+
+      canvas.style.position = "absolute"
+      canvas.style.top = "0"
+      canvas.style.left = "0"
+      canvas.style.width = "100%"
+      canvas.style.height = "100%"
+      canvas.style.pointerEvents = "none"
+      canvas.style.background = "transparent"
+      canvas.style.zIndex = "5"
+
+      routeCanvasRef.current = canvas
     }
 
-    if (map.getSource("route-source")) {
-      map.removeSource("route-source")
+    if (routeCanvasRef.current.parentElement !== canvasContainer) {
+      canvasContainer.appendChild(routeCanvasRef.current)
     }
+
+    return routeCanvasRef.current
   }
 
   const getPointDistance = (point, basePoint) => {
@@ -130,7 +162,6 @@ const Map2 = ({
     if (cleanedCoordinates.length < 2) return []
 
     const basePoints = [[position.lng, position.lat]]
-
     const pickupLngLat = getLngLat(pickup)
 
     if (pickupLngLat) {
@@ -323,6 +354,8 @@ const Map2 = ({
 
     const markerElement = document.createElement("div")
 
+    markerElement.style.zIndex = "30"
+
     markerElement.innerHTML = `
       <div style="
         width: 86px;
@@ -423,6 +456,8 @@ const Map2 = ({
 
     const markerElement = document.createElement("div")
 
+    markerElement.style.zIndex = "25"
+
     markerElement.innerHTML = `
       <div style="
         width: 42px;
@@ -480,64 +515,147 @@ const Map2 = ({
     pickupMarkerRef.current.setLngLat(pickupLngLat)
   }
 
-  const drawRoute = (map, coordinates = routeCoordinatesRef.current) => {
-    const finalRoute = formatRouteCoordinates(coordinates)
+  const getRoutePath = (coordinates = routeCoordinatesRef.current) => {
+    const route = formatRouteCoordinates(coordinates)
 
-    if (finalRoute.length < 2) {
-      clearRoute(map)
-      return
+    if (route.length >= 2) {
+      lastValidRouteRef.current = route
     }
 
-    const routeData = {
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: finalRoute,
-      },
-    }
+    const finalRoute =
+      route.length >= 2
+        ? route
+        : lastValidRouteRef.current
 
-    if (map.getSource("route-source")) {
-      map.getSource("route-source").setData(routeData)
+    if (finalRoute.length < 2) return []
 
-      if (!map.getLayer("route-line")) {
-        map.addLayer({
-          id: "route-line",
-          type: "line",
-          source: "route-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#111827",
-            "line-width": 4,
-            "line-opacity": 0.95,
-          },
-        })
+    const captainLngLat = [position.lng, position.lat]
+
+    let nearestIndex = 0
+    let minDistance = Infinity
+
+    finalRoute.forEach((point, index) => {
+      const distance = getPointDistance(point, captainLngLat)
+
+      if (distance < minDistance) {
+        minDistance = distance
+        nearestIndex = index
+      }
+    })
+
+    const remainingRoute = finalRoute.slice(nearestIndex)
+
+    if (remainingRoute.length < 2) return finalRoute
+
+    return remainingRoute
+  }
+
+  const getTrimmedCanvasPoints = (points, startGap = 48, endGap = 24) => {
+    if (points.length < 2) return points
+
+    const trimStart = (items, gap) => {
+      let remainingGap = gap
+
+      for (let i = 0; i < items.length - 1; i++) {
+        const current = items[i]
+        const next = items[i + 1]
+
+        const dx = next.x - current.x
+        const dy = next.y - current.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance > remainingGap) {
+          const ratio = remainingGap / distance
+
+          return [
+            {
+              x: current.x + dx * ratio,
+              y: current.y + dy * ratio,
+            },
+            ...items.slice(i + 1),
+          ]
+        }
+
+        remainingGap -= distance
       }
 
-      return
+      return items
     }
 
-    map.addSource("route-source", {
-      type: "geojson",
-      data: routeData,
+    const afterStartTrim = trimStart(points, startGap)
+
+    const reversedPoints = [...afterStartTrim].reverse()
+    const afterEndTrim = trimStart(reversedPoints, endGap).reverse()
+
+    return afterEndTrim
+  }
+
+  const drawRouteCanvas = (map, coordinates = routeCoordinatesRef.current) => {
+    if (!map) return
+
+    const finalRoute = getRoutePath(coordinates)
+    const canvas = getRouteCanvas(map)
+
+    if (!canvas) return
+
+    const mapCanvas = map.getCanvas()
+    const width = mapCanvas.clientWidth
+    const height = mapCanvas.clientHeight
+    const dpr = window.devicePixelRatio || 1
+
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+
+    const ctx = canvas.getContext("2d")
+
+    if (!ctx) return
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, width, height)
+
+    if (finalRoute.length < 2) return
+
+    const canvasPoints = finalRoute.map((coord) => map.project(coord))
+    const drawPoints = getTrimmedCanvasPoints(canvasPoints)
+
+    if (drawPoints.length < 2) return
+
+    ctx.lineJoin = "round"
+    ctx.lineCap = "round"
+
+    ctx.beginPath()
+
+    drawPoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y)
+      } else {
+        ctx.lineTo(point.x, point.y)
+      }
     })
 
-    map.addLayer({
-      id: "route-line",
-      type: "line",
-      source: "route-source",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#111827",
-        "line-width": 4,
-        "line-opacity": 0.95,
-      },
+    ctx.strokeStyle = "rgba(255,255,255,0.9)"
+    ctx.lineWidth = 5
+    ctx.stroke()
+
+    ctx.strokeStyle = "#111827"
+    ctx.lineWidth = 3
+    ctx.stroke()
+  }
+
+  const syncRouteCanvas = (map) => {
+    if (!map) return
+
+    drawRouteCanvas(map, routeCoordinatesRef.current)
+
+    requestAnimationFrame(() => {
+      drawRouteCanvas(map, routeCoordinatesRef.current)
     })
+
+    setTimeout(() => {
+      drawRouteCanvas(map, routeCoordinatesRef.current)
+    }, 300)
   }
 
   const getInitialProvider = () => {
@@ -553,34 +671,34 @@ const Map2 = ({
   }
 
   const moveCameraToCaptain = ({ isFirstRealMove = false } = {}) => {
-  if (!mapRef.current) return
+    if (!mapRef.current) return
 
-  const cameraOptions = {
-    center: [position.lng, position.lat],
-    zoom: 17,
-    pitch: 58,
-    bearing: getNavigationBearing(),
-    offset: [0, 120],
-    essential: true,
-  }
+    const cameraOptions = {
+      center: [position.lng, position.lat],
+      zoom: 17,
+      pitch: 58,
+      bearing: getNavigationBearing(),
+      offset: [0, 120],
+      essential: true,
+    }
 
-  if (isFirstRealMove) {
-    mapRef.current.flyTo({
+    if (isFirstRealMove) {
+      mapRef.current.flyTo({
+        ...cameraOptions,
+        duration: 2600,
+        speed: 0.55,
+        curve: 1.6,
+      })
+
+      return
+    }
+
+    mapRef.current.easeTo({
       ...cameraOptions,
-      duration: 2600,
-      speed: 0.55,
-      curve: 1.6,
+      duration: 900,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
     })
-
-    return
   }
-
-  mapRef.current.easeTo({
-    ...cameraOptions,
-    duration: 900,
-    easing: (t) => 1 - Math.pow(1 - t, 3),
-  })
-}
 
   useEffect(() => {
     preloadVehicleImages()
@@ -600,41 +718,33 @@ const Map2 = ({
   }, [currentLocation])
 
   useEffect(() => {
-  if (!navigator.geolocation) return
+    if (!navigator.geolocation) return
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      if (currentLocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (currentLocation) return
 
-      realLocationFoundRef.current = true
+        realLocationFoundRef.current = true
 
-      setPosition({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-      })
-    },
-    (err) => {
-
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 5000,
-      timeout: 10000,
-    }
-  )
-}, [])
+        setPosition({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        })
+      },
+      () => { },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
+      }
+    )
+  }, [currentLocation])
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return
 
     const MAP_STYLES = {
-      // Primary map style.
-      // This uses your MapTiler key and gives a more polished modern map.
       maptiler: `https://api.maptiler.com/maps/streets-v2/style.json?key=${mapTilerKey}`,
-
-      // Backup free map style.
-      // If MapTiler key is missing, limit is reached, or API gives 401/403/429,
-      // we automatically switch to this OpenFreeMap style.
       free: "https://tiles.openfreemap.org/styles/liberty",
     }
 
@@ -665,7 +775,8 @@ const Map2 = ({
         add3DBuildings(map)
         updateCaptainMarkerStyle()
         syncPickupMarker()
-        drawRoute(map, routeCoordinatesRef.current)
+        getRouteCanvas(map)
+        syncRouteCanvas(map)
       })
 
       map.on("error", (e) => {
@@ -688,8 +799,6 @@ const Map2 = ({
 
         fallbackDoneRef.current = true
 
-        // MapTiler failed, so block MapTiler for 24 hours.
-        // This avoids repeated failed requests on every reload.
         localStorage.setItem(
           "maptilerBlockedTill",
           String(Date.now() + 24 * 60 * 60 * 1000)
@@ -701,6 +810,7 @@ const Map2 = ({
         mapRef.current = null
         captainMarkerRef.current = null
         pickupMarkerRef.current = null
+        routeCanvasRef.current = null
 
         createMap("free")
       })
@@ -714,36 +824,42 @@ const Map2 = ({
         mapRef.current = null
         captainMarkerRef.current = null
         pickupMarkerRef.current = null
+        routeCanvasRef.current = null
         isMapLoadedRef.current = false
       }
     }
   }, [])
 
-useEffect(() => {
-  if (!mapRef.current) return
+  useEffect(() => {
+    if (!mapRef.current) return
 
-  mapRef.current.flyTo({
-    center: [position.lng, position.lat],
-    zoom: 17,
-    pitch: 60,
-    bearing: getNavigationBearing(),
-    offset: [0, 120],
-    speed: 1.2,
-    curve: 1,
-  })
+    const isFirstRealMove =
+      realLocationFoundRef.current &&
+      !firstRealLocationFlyDoneRef.current
 
-  updateCaptainMarkerStyle()
-}, [position])
+    if (isFirstRealMove) {
+      firstRealLocationFlyDoneRef.current = true
+    }
+
+    moveCameraToCaptain({
+      isFirstRealMove,
+    })
+
+    updateCaptainMarkerStyle()
+    syncRouteCanvas(mapRef.current)
+  }, [position])
 
   useEffect(() => {
     if (!mapRef.current) return
 
     syncPickupMarker()
     updateCaptainMarkerStyle()
+    syncRouteCanvas(mapRef.current)
   }, [pickup])
 
   useEffect(() => {
     updateCaptainMarkerStyle()
+    syncRouteCanvas(mapRef.current)
   }, [vehicleType])
 
   useEffect(() => {
@@ -751,13 +867,10 @@ useEffect(() => {
 
     const map = mapRef.current
 
+    routeCoordinatesRef.current = routeCoordinates || []
+
     const updateRouteOnMap = () => {
-      drawRoute(map, routeCoordinatesRef.current)
-
-      if (firstLocationFlyDoneRef.current) {
-        moveCameraToCaptain()
-      }
-
+      syncRouteCanvas(map)
       updateCaptainMarkerStyle()
       syncPickupMarker()
     }
@@ -767,7 +880,17 @@ useEffect(() => {
     } else {
       map.once("load", updateRouteOnMap)
     }
-  }, [routeCoordinates])
+
+    map.on("move", updateRouteOnMap)
+    map.on("zoom", updateRouteOnMap)
+    map.on("resize", updateRouteOnMap)
+
+    return () => {
+      map.off("move", updateRouteOnMap)
+      map.off("zoom", updateRouteOnMap)
+      map.off("resize", updateRouteOnMap)
+    }
+  }, [routeCoordinates, pickup, position])
 
   return <div ref={mapContainer} className="w-full h-full" />
 }

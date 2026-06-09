@@ -21,7 +21,6 @@ const Map2 = ({
   vehicleType = "bike",
   showVehicleMarker = true,
 }) => {
-
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY
 
   const mapContainer = useRef(null)
@@ -33,6 +32,7 @@ const Map2 = ({
 
   const routeCoordinatesRef = useRef([])
   const lastVehicleImageRef = useRef("")
+  const routeCanvasRef = useRef(null)
 
   const defaultPosition = {
     lat: 21.1702,
@@ -352,16 +352,15 @@ const Map2 = ({
     targetMarkerRef.current = null
   }
 
-  const clearRoute = (map) => {
-    if (!map) return
+  const clearRouteCanvas = () => {
+    const canvas = routeCanvasRef.current
 
-    if (map.getLayer("route-line")) {
-      map.removeLayer("route-line")
-    }
+    if (!canvas) return
 
-    if (map.getSource("route-source")) {
-      map.removeSource("route-source")
-    }
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
   const createVehicleMarker = (map, location) => {
@@ -371,6 +370,8 @@ const Map2 = ({
 
     const vehicleImage = getVehicleImage()
     const markerElement = document.createElement("div")
+
+    markerElement.style.zIndex = "30"
 
     lastVehicleImageRef.current = vehicleImage
 
@@ -440,6 +441,8 @@ const Map2 = ({
 
     const markerElement = document.createElement("div")
 
+    markerElement.style.zIndex = "30"
+
     markerElement.innerHTML = `
       <div style="
         width: 44px;
@@ -484,6 +487,8 @@ const Map2 = ({
     if (!lngLat) return
 
     const markerElement = document.createElement("div")
+
+    markerElement.style.zIndex = "25"
 
     markerElement.innerHTML = `
       <div style="
@@ -616,64 +621,120 @@ const Map2 = ({
     updateTargetMarker()
   }
 
-  const drawRoute = (map, coordinates = routeCoordinatesRef.current) => {
+  const getRouteCanvas = (map) => {
+    if (!map) return null
+
+    const canvasContainer = map.getCanvasContainer()
+
+    if (!canvasContainer) return null
+
+    if (!routeCanvasRef.current) {
+      const canvas = document.createElement("canvas")
+
+      canvas.style.position = "absolute"
+      canvas.style.top = "0"
+      canvas.style.left = "0"
+      canvas.style.width = "100%"
+      canvas.style.height = "100%"
+      canvas.style.pointerEvents = "none"
+      canvas.style.background = "transparent"
+      canvas.style.zIndex = "5"
+
+      routeCanvasRef.current = canvas
+    }
+
+    if (routeCanvasRef.current.parentElement !== canvasContainer) {
+      canvasContainer.appendChild(routeCanvasRef.current)
+    }
+
+    return routeCanvasRef.current
+  }
+
+  const fitMapToRoute = (map, finalRoute) => {
+    if (!map || finalRoute.length < 2) return
+
+    const bounds = new maplibregl.LngLatBounds()
+
+    finalRoute.forEach((coord) => {
+      bounds.extend(coord)
+    })
+
+    map.fitBounds(bounds, {
+      padding: {
+        top: 120,
+        bottom: 260,
+        left: 80,
+        right: 80,
+      },
+      maxZoom: 17,
+      duration: 700,
+    })
+  }
+
+  const drawRouteCanvas = (map, coordinates = routeCoordinatesRef.current) => {
+    if (!map) return
+
     const finalRoute = formatRouteCoordinates(coordinates)
+    const canvas = getRouteCanvas(map)
 
-    if (finalRoute.length < 2) {
-      clearRoute(map)
-      return
-    }
+    if (!canvas) return
 
-    const routeData = {
-      type: "Feature",
-      geometry: {
-        type: "LineString",
-        coordinates: finalRoute,
-      },
-    }
+    const mapCanvas = map.getCanvas()
 
-    if (map.getSource("route-source")) {
-      map.getSource("route-source").setData(routeData)
+    const width = mapCanvas.clientWidth
+    const height = mapCanvas.clientHeight
+    const dpr = window.devicePixelRatio || 1
 
-      if (!map.getLayer("route-line")) {
-        map.addLayer({
-          id: "route-line",
-          type: "line",
-          source: "route-source",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#111827",
-            "line-width": 4,
-            "line-opacity": 0.95,
-          },
-        })
+    canvas.width = width * dpr
+    canvas.height = height * dpr
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
+
+    const ctx = canvas.getContext("2d")
+
+    if (!ctx) return
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, width, height)
+
+    if (finalRoute.length < 2) return
+
+    ctx.lineJoin = "round"
+    ctx.lineCap = "round"
+
+    ctx.beginPath()
+
+    finalRoute.forEach((coord, index) => {
+      const point = map.project(coord)
+
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y)
+      } else {
+        ctx.lineTo(point.x, point.y)
       }
-
-      return
-    }
-
-    map.addSource("route-source", {
-      type: "geojson",
-      data: routeData,
     })
 
-    map.addLayer({
-      id: "route-line",
-      type: "line",
-      source: "route-source",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#111827",
-        "line-width": 4,
-        "line-opacity": 0.95,
-      },
+    ctx.strokeStyle = "rgba(255,255,255,0.9)"
+    ctx.lineWidth = 6
+    ctx.stroke()
+
+    ctx.strokeStyle = "#111827"
+    ctx.lineWidth = 3
+    ctx.stroke()
+  }
+
+  const syncRouteCanvas = (map) => {
+    if (!map) return
+
+    drawRouteCanvas(map, routeCoordinatesRef.current)
+
+    requestAnimationFrame(() => {
+      drawRouteCanvas(map, routeCoordinatesRef.current)
     })
+
+    setTimeout(() => {
+      drawRouteCanvas(map, routeCoordinatesRef.current)
+    }, 300)
   }
 
   useEffect(() => {
@@ -715,14 +776,12 @@ const Map2 = ({
   }, [])
 
   const getInitialProvider = () => {
-    const blockedTill = Number(localStorage.getItem("maptilerBlockedTill") || 0)
-
-    if (!mapTilerKey) return "free"
-
-    if (Date.now() < blockedTill) {
+    if (!mapTilerKey) {
+      console.log("MapTiler key missing, using OpenFreeMap")
       return "free"
     }
 
+    console.log("MapTiler key found, using MapTiler")
     return "maptiler"
   }
 
@@ -739,6 +798,8 @@ const Map2 = ({
     let fallbackDone = false
 
     const createMap = (provider) => {
+      console.log("Creating map with provider:", provider)
+
       const map = new maplibregl.Map({
         container: mapContainer.current,
         style: MAP_STYLES[provider],
@@ -754,16 +815,35 @@ const Map2 = ({
 
       mapRef.current = map
 
+      setTimeout(() => {
+        map.resize()
+        syncRouteCanvas(map)
+      }, 100)
+
       handleMissingStyleImages(map)
 
       map.on("load", () => {
+        console.log("Map loaded with provider:", provider)
+
+        map.resize()
+        getRouteCanvas(map)
         add3DBuildings(map)
         syncMarkers()
-        drawRoute(map, routeCoordinatesRef.current)
+
+        const finalRoute = formatRouteCoordinates(routeCoordinatesRef.current)
+
+        if (finalRoute.length >= 2) {
+          fitMapToRoute(map, finalRoute)
+        }
+
+        syncRouteCanvas(map)
       })
 
       map.on("error", (e) => {
         const message = e?.error?.message || ""
+
+        console.log("Map error provider:", provider)
+        console.log("Map error message:", message)
 
         const shouldFallback =
           provider === "maptiler" &&
@@ -780,18 +860,16 @@ const Map2 = ({
 
         if (!shouldFallback) return
 
-        fallbackDone = true
+        console.log("Switching to OpenFreeMap because MapTiler failed:", message)
 
-        localStorage.setItem(
-          "maptilerBlockedTill",
-          String(Date.now() + 24 * 60 * 60 * 1000)
-        )
+        fallbackDone = true
 
         map.remove()
         mapRef.current = null
         vehicleMarkerRef.current = null
         userMarkerRef.current = null
         targetMarkerRef.current = null
+        routeCanvasRef.current = null
 
         createMap("free")
       })
@@ -806,6 +884,7 @@ const Map2 = ({
         vehicleMarkerRef.current = null
         userMarkerRef.current = null
         targetMarkerRef.current = null
+        routeCanvasRef.current = null
       }
     }
   }, [])
@@ -826,12 +905,14 @@ const Map2 = ({
     })
 
     updateMainMarker()
+    syncRouteCanvas(mapRef.current)
   }, [position, showVehicleMarker])
 
   useEffect(() => {
     if (!mapRef.current) return
 
     updateMainMarker()
+    syncRouteCanvas(mapRef.current)
   }, [vehicleType, showVehicleMarker, routeCoordinates])
 
   useEffect(() => {
@@ -845,16 +926,31 @@ const Map2 = ({
 
     const map = mapRef.current
 
-    const updateRouteOnMap = () => {
-      drawRoute(map, routeCoordinatesRef.current)
-      updateMainMarker()
-      updateTargetMarker()
+    routeCoordinatesRef.current = routeCoordinates || []
+
+    const finalRoute = formatRouteCoordinates(routeCoordinatesRef.current)
+
+    if (finalRoute.length >= 2) {
+      fitMapToRoute(map, finalRoute)
+    } else {
+      clearRouteCanvas()
     }
 
-    if (map.isStyleLoaded()) {
-      updateRouteOnMap()
-    } else {
-      map.once("load", updateRouteOnMap)
+    const redrawRoute = () => {
+      drawRouteCanvas(map, routeCoordinatesRef.current)
+    }
+
+    redrawRoute()
+
+    map.on("move", redrawRoute)
+    map.on("resize", redrawRoute)
+
+    setTimeout(redrawRoute, 300)
+    setTimeout(redrawRoute, 700)
+
+    return () => {
+      map.off("move", redrawRoute)
+      map.off("resize", redrawRoute)
     }
   }, [routeCoordinates])
 

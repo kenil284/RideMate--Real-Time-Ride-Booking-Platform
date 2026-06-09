@@ -7,7 +7,6 @@ import VehicleOptions from "../component/VehicleOptions";
 import ConfirmRide from "../component/ConfirmRide";
 import LookingForDriver from "../component/LookingForDriver";
 import WaitingForDriver from "../component/WaitingForDriver";
-import Map from "../component/Map";
 
 import useLocationSearch from "../Hooks/useLocationSearch";
 import useCurrentLocation from "../Hooks/useCurrentLocation";
