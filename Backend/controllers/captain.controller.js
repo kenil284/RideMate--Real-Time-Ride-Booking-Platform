@@ -4,6 +4,7 @@ import { generateAccessToken, generateRefreshToken } from "../utils/jwt.util.js"
 import { hashPassword, verifyPassword } from "../utils/password.util.js";
 import { getCaptainTodayDashboard } from "../services/captain.service.js";
 import refreshTokenModel from "../models/refreshToken.model.js";
+import blackListTokenModel from "../models/blackListToken.model.js"
 
 const isProduction = process.env.NODE_ENV === "production"
 
@@ -222,26 +223,29 @@ export const getCaptainProfileController = async (req, res) => {
  */
 export const logoutCaptainController = async (req, res) => {
     try {
+        const accessToken =
+            req.cookies?.captainAccessToken ||
+            req.headers.authorization?.split(" ")[1]
 
-         if (accessToken) {
-            await blackListTokenModel.create({ token: accessToken });
+        const refreshToken = req.cookies?.captainRefreshToken
+
+        if (accessToken) {
+            await blackListTokenModel.create({ token: accessToken })
         }
 
         if (refreshToken) {
-            await refreshTokenModel.deleteOne({ token: refreshToken });
+            await refreshTokenModel.deleteOne({ token: refreshToken })
         }
 
-        res.clearCookie("userAccessToken", cookieOptions)
-        res.clearCookie("userRefreshToken", cookieOptions)
+        res.clearCookie("captainAccessToken", cookieOptions)
+        res.clearCookie("captainRefreshToken", cookieOptions)
 
-    
-        res.status(200).json({
+        return res.status(200).json({
             message: "Captain logged out successfully",
-        });
-    }
-
-    catch (error) {
-        res.status(500).json({
+        })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
             message: "Internal server error",
         })
     }

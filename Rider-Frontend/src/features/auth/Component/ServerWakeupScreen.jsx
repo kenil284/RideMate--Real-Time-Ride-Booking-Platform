@@ -25,8 +25,8 @@ const ServerWakeupScreen = () => {
 
                 <div className="absolute w-24 h-24 rounded-full bg-white/[0.04] border border-white/15 shadow-[0_0_70px_rgba(255,255,255,0.12)] animate-pulse" />
 
-                <h1 className="relative text-white text-6xl font-extrabold tracking-tight drop-shadow-[0_0_22px_rgba(255,255,255,0.25)]">
-                    Uber
+                <h1 className="relative text-white text-3xl font-extrabold tracking-tight drop-shadow-[0_0_22px_rgba(255,255,255,0.25)]">
+                    RideMate
                 </h1>
             </div>
 

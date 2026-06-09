@@ -1,310 +1,396 @@
-import React from "react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react"
+import { Link } from "react-router-dom"
 
 const Home = () => {
-
-    const ToDriversteps = [
+    const captainSteps = [
         {
             image: "/Home/requirement.svg",
-            title: "Requirements",
-            points: ["Be at least 18 years old", "Clear a background screening"],
+            title: "Basic requirements",
+            points: [
+                "Be at least 18 years old",
+                "Have a valid phone number",
+                "Clear RideMate verification",
+            ],
         },
         {
             image: "/Home/document.svg",
-            title: "Documents",
+            title: "Required documents",
             points: [
-                "Valid driver's license",
-                "Proof of residency in your city",
-                "Car documents such as insurance and registration",
+                "Valid driving license",
+                "Address or residency proof",
+                "Vehicle insurance and registration documents",
             ],
         },
         {
             image: "/Home/signup.svg",
-            title: "Signup process",
+            title: "Start onboarding",
             points: [
-                "Visit the nearest Partner Seva Kendra in your city",
-                "Submit documents and photo",
-                "Provide information for a background check",
+                "Create your RideMate captain account",
+                "Upload your documents and vehicle details",
+                "Go online after approval and start accepting rides",
             ],
         },
-    ];
+    ]
 
-    const [index, setIndex] = useState(0);
+    const benefits = [
+        {
+            image: "/Home/calander.svg",
+            title: "Work on your time",
+            description: "Go online whenever you are available and manage your own daily schedule.",
+        },
+        {
+            image: "/Home/money.svg",
+            title: "Clear ride earnings",
+            description: "View fare, distance, duration, and ride details before moving ahead.",
+        },
+        {
+            image: "/Home/support.svg",
+            title: "Ride workflow support",
+            description: "Get a simple flow from request received to ride completed.",
+        },
+    ]
 
-    const current = ToDriversteps[index];
+    const safetyItems = [
+        {
+            image: "/Home/protection.svg",
+            title: "Verified ride flow",
+            description: "Every ride moves through clear stages like accepted, started, completed, or cancelled.",
+        },
+        {
+            image: "/Home/message.svg",
+            title: "Live ride updates",
+            description: "Stay updated with ride status, pickup details, route movement, and notifications.",
+        },
+        {
+            image: "/Home/community-guidlines.svg",
+            title: "Better trip experience",
+            description: "Clean actions and grouped information help captains focus on the current ride.",
+        },
+    ]
+
+    const [index, setIndex] = useState(0)
+
+    const current = captainSteps[index]
 
     return (
-
-
-        <div className="min-h-screen font-sans pb-20">
+        <div className="min-h-screen font-sans text-black">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-black text-white px-5 py-4 flex items-center justify-between">
-                <h1 className="text-2xl font-medium">Uber</h1>
-
-                <div className="flex items-center gap-4">
-                    <Link to="/login" className="text-sm font-semibold">
-                        Log in
+                <header className="sticky top-[-1px] z-50 bg-black text-white px-5 py-3 min-h-[60px]">
+                  <div className="flex items-center justify-between">
+                    <Link to="/" className="flex items-center gap-2 active:scale-95 transition">
+                      <span className="h-8 w-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold">
+                        RM
+                      </span>
+            
+                      <h1 className="text-lg font-semibold tracking-tight">
+                        RideMate
+                      </h1>
                     </Link>
-
-                    <Link
+            
+                    <div className="flex items-center gap-3">
+                      <Link to="/login" className="text-sm font-semibold text-white/90">
+                        Log in
+                      </Link>
+            
+                      <Link
                         to="/register"
                         className="bg-white text-black px-4 py-2 rounded-full text-sm font-semibold active:scale-95 transition"
-                    >
+                      >
                         Sign up
-                    </Link>
-                </div>
-            </header>
+                      </Link>
+                    </div>
+                  </div>
+                </header>
+            
 
-            {/* Drive Top Bar */}
-            <section className="px-5 py-5">
-                <h2 className="text-2xl font-bold">
-                    Drive
-                </h2>
+            {/* Intro */}
+            <section className="px-5 pt-5 pb-3">
+                <p className="text-[12px] font-semibold text-black/55 mb-1.5">
+                    Captain partner app
+                </p>
+
+                <h1 className="text-[24px] leading-[30px] font-bold tracking-tight">
+                    Earn with RideMate
+                </h1>
             </section>
 
             {/* Hero */}
-            <section className="bg-black text-white px-5 py-12">
-                <h1 className="text-[30px] leading-[40px] font-bold mb-6">
-                    Drive when you <br />
-                    want, make what you <br />
-                    need
-                </h1>
+            <section className="px-5 pt-2 pb-8">
+                <div className="bg-black text-white rounded-2xl px-5 py-6">
+                    <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full mb-5">
+                        <span className="h-2 w-2 rounded-full bg-white"></span>
 
-                <p className="text-base mb-8">Earn on your own schedule.</p>
-
-                <div className="flex items-center gap-6">
-                    <button className=" text-black px-6 py-4 rounded-lg font-semibold active:scale-95 transition">
-                        Get started
-                    </button>
-
-                    <Link to="/login" className="border-b border-white pb-1">
-                        Log in
-                    </Link>
-                </div>
-            </section>
-
-            {/* Why Drive */}
-            <section className=" px-5 py-10">
-                <h2 className="text-2xl font-bold mb-12">Why drive with us</h2>
-
-                <div className="w-full h-[130px] bg-[#eeeeee] rounded-lg flex items-center justify-center text-2xl font-bold mb-16">
-                    <img src="/Home/driver.svg" alt="" />
-                </div>
-
-                <div className="space-y-10">
-                    <div>
-                        <div className="text-3xl mb-5"><img src="/Home/calander.svg" alt="" /></div>
-                        <h3 className="text-lg font-bold mb-3">Set your own hours</h3>
-                        <p className="text-base leading-7">
-                            You decide when and how often you drive.
+                        <p className="text-[11px] font-semibold tracking-wide">
+                            Mobile ride platform
                         </p>
                     </div>
 
-                    <div>
-                        <div className="text-3xl mb-5"><img src="/Home/money.svg" alt="" /></div>
-                        <h3 className="text-lg font-bold mb-3">Get paid fast</h3>
-                        <p className="text-base leading-7">
-                            Weekly payments in your bank account.
-                        </p>
-                    </div>
+                    <h2 className="text-[24px] leading-[31px] font-bold tracking-tight mb-3">
+                        Become a RideMate Captain
+                    </h2>
 
-                    <div>
-                        <div className="text-3xl mb-5"><img src="/Home/support.svg" alt="" /></div>
-                        <h3 className="text-lg font-bold mb-3">
-                            Get support at every turn
-                        </h3>
-                        <p className="text-base leading-7">
-                            If there’s anything that you need, you can reach us anytime.
-                        </p>
-                    </div>
-                </div>
-
-                <button className="mt-10 border-b border-black pb-1">
-                    How driving works
-                </button>
-            </section>
-
-            {/* Signup Need */}
-            <section className=" px-5 py-12">
-                <h2 className="text-[26px] leading-[34px] font-bold mb-10">
-                    Here's what you need to <br />
-                    sign up
-                </h2>
-
-                <div className="border-b border-[#eeeeee] mb-8">
-                    <button className="pb-4 px-4 border-b-4 border-black font-medium">
-                        To drive
-                    </button>
-                </div>
-
-                {/* Step Content */}
-                <div key={index} className="min-h-[320px] overflow-hidden">
-                    <div className="step-slide">
-                        <img
-                            src={current.image}
-                            alt={current.title}
-                            className="w-7 h-7 object-contain mb-6"
-                        />
-
-                        <h3 className="text-xl font-semibold mb-4">{current.title}</h3>
-
-                        <ul className="list-disc pl-6 leading-7">
-                            {current.points.map((point, i) => (
-                                <li key={i}>{point}</li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex items-center justify-center gap-4 mt-6">
-                    <p className="font-semibold text-sm w-10 text-center">
-                        {index + 1}/{ToDriversteps.length}
+                    <p className="text-sm leading-6 text-white/75 mb-6">
+                        Accept nearby ride requests, track live routes, and manage your ride workflow from your mobile dashboard.
                     </p>
 
-                    <button
-                        type="button"
-                        onClick={() => setIndex((prev) => Math.max(prev - 1, 0))}
-                        disabled={index === 0}
-                        className="w-12 h-12 rounded-full bg-[#f3f3f3] flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
-                    >
-                        <svg
-                            className="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                    <div className="flex items-center gap-4">
+                        <Link
+                            to="/register"
+                            className="h-12 bg-white text-black px-5 rounded-xl font-semibold text-sm flex items-center justify-center active:scale-95 transition"
                         >
-                            <path d="M15 18L9 12L15 6" />
-                        </svg>
-                    </button>
+                            Get started
+                        </Link>
 
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setIndex((prev) => Math.min(prev + 1, ToDriversteps.length - 1))
-                        }
-                        disabled={index === ToDriversteps.length - 1}
-                        className="w-12 h-12 rounded-full bg-[#f3f3f3] flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
-                    >
-                        <svg
-                            className="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                        <Link
+                            to="/login"
+                            className="text-sm font-semibold border-b border-white pb-1"
                         >
-                            <path d="M9 18L15 12L9 6" />
-                        </svg>
+                            Login
+                        </Link>
+                    </div>
+                </div>
+            </section>
+
+            {/* Benefits */}
+            <section className="px-5 py-8">
+                <div className="mb-5">
+                    <p className="text-[12px] font-semibold text-black/55 mb-1.5">
+                        Why captains choose us
+                    </p>
+
+                    <h2 className="text-[22px] leading-[28px] font-bold tracking-tight">
+                        Built for simple and reliable rides
+                    </h2>
+                </div>
+
+                <div className="w-full h-[130px] rounded-2xl flex items-center justify-center mb-5 overflow-hidden">
+                    <img
+                        src="/Home/driver.svg"
+                        alt="RideMate captain"
+                        className="h-full object-contain"
+                    />
+                </div>
+
+                <div className="space-y-3">
+                    {benefits.map((item, i) => (
+                        <div
+                            key={i}
+                            className="rounded-2xl border border-black/10 p-4 bg-white"
+                        >
+                            <img
+                                src={item.image}
+                                alt={item.title}
+                                className="w-8 h-8 object-contain mb-4"
+                            />
+
+                            <h3 className="text-[16px] leading-6 font-bold mb-1.5">
+                                {item.title}
+                            </h3>
+
+                            <p className="text-sm leading-6 text-black/65">
+                                {item.description}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Onboarding */}
+            <section className="px-5 py-8">
+                <div className="mb-5">
+                    <p className="text-[12px] font-semibold text-black/55 mb-1.5">
+                        Onboarding
+                    </p>
+
+                    <h2 className="text-[22px] leading-[28px] font-bold tracking-tight">
+                        What you need to start
+                    </h2>
+                </div>
+
+                <div className="flex items-center gap-3 border-b border-black/10 mb-5">
+                    <button className="pb-3 px-1 border-b-[3px] border-black text-sm font-semibold">
+                        Captain
                     </button>
                 </div>
-            </section >
+
+                <div className="rounded-2xl border border-black/10 p-4 bg-white min-h-[245px]">
+                    <img
+                        src={current.image}
+                        alt={current.title}
+                        className="w-8 h-8 object-contain mb-5"
+                    />
+
+                    <h3 className="text-[18px] leading-6 font-bold mb-3">
+                        {current.title}
+                    </h3>
+
+                    <ul className="list-disc pl-5 space-y-2 text-sm leading-6 text-black/70">
+                        {current.points.map((point, i) => (
+                            <li key={i}>
+                                {point}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div className="flex items-center justify-between mt-5">
+                    <p className="font-semibold text-sm">
+                        Step {index + 1} of {captainSteps.length}
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIndex((prev) => Math.max(prev - 1, 0))}
+                            disabled={index === 0}
+                            className="w-12 h-12 rounded-full border border-black/10 flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
+                        >
+                            <svg
+                                className="w-5 h-5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M15 18L9 12L15 6" />
+                            </svg>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setIndex((prev) => Math.min(prev + 1, captainSteps.length - 1))
+                            }
+                            disabled={index === captainSteps.length - 1}
+                            className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all"
+                        >
+                            <svg
+                                className="w-5 h-5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M9 18L15 12L9 6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
 
             {/* Safety */}
-            < section className=" px-5 py-12" >
-                <h2 className="text-[26px] leading-[34px] font-bold mb-5">
-                    Safety on the road
-                </h2>
+            <section className="px-5 py-8">
+                <div className="mb-5">
+                    <p className="text-[12px] font-semibold text-black/55 mb-1.5">
+                        Safety and control
+                    </p>
 
-                <p className="text-base leading-7 mb-10">
-                    Your safety drives us to continuously raise the bar.
-                </p>
+                    <h2 className="text-[22px] leading-[28px] font-bold tracking-tight mb-3">
+                        Designed for safer everyday rides
+                    </h2>
 
-                <button className="border-b border-black pb-1 mb-10">
-                    Learn more
-                </button>
-
-                <div className="space-y-12">
-                    <div>
-                        <div className="w-14 h-14 bg-[#eeeeee] rounded-lg flex items-center justify-center font-bold mb-5">
-                            <img src="/Home/protection.svg" alt="" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-4">Protection on every trip</h3>
-                        <p className="leading-7">
-                            Each trip you take with the Uber app is insured to protect you and
-                            your rider.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div className="w-14 h-14 bg-[#eeeeee] rounded-lg flex items-center justify-center font-bold mb-5">
-                            <img src="/Home/message.svg" alt="" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-4">Help if you need it</h3>
-                        <p className="leading-7">
-                            The Emergency Button calls 911. The app displays your trip details
-                            so you can quickly share them with authorities.
-                        </p>
-                    </div>
-
-                    <div>
-                        <div className="w-14 h-14 bg-[#eeeeee] rounded-lg flex items-center justify-center font-bold mb-5">
-                            <img src="/Home/community-guidlines.svg" alt="" />
-                        </div>
-                        <h3 className="text-lg font-bold mb-4">Community Guidelines</h3>
-                        <p className="leading-7">
-                            Our standards help to create safe connections and positive
-                            interactions with everyone.
-                        </p>
-                    </div>
+                    <p className="text-sm leading-6 text-black/65">
+                        RideMate keeps captain and rider details connected with a clear mobile-first ride flow.
+                    </p>
                 </div>
-            </section >
 
-            {/* Terms */}
-            < section className="px-5 py-12" >
-                <p className="text-sm leading-7 mb-6">
-                    This is a promotional offer and is not a promise or guarantee of future
-                    earnings. This offer is available only to new drivers and delivery
-                    people on the Uber app who meet the eligibility requirements.
-                </p>
+                <div className="space-y-3">
+                    {safetyItems.map((item, i) => (
+                        <div
+                            key={i}
+                            className="rounded-2xl border border-black/10 p-4 bg-white"
+                        >
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                                <img
+                                    src={item.image}
+                                    alt={item.title}
+                                    className="w-8 h-8 object-contain"
+                                />
+                            </div>
 
-                <p className="text-sm leading-7">
-                    Any payment due will be automatically added to your account after you
-                    complete the required trips. Each completed trip or delivery counts as
-                    one trip or delivery toward your minimum requirement.
-                </p>
-            </section >
+                            <h3 className="text-[16px] leading-6 font-bold mb-1.5">
+                                {item.title}
+                            </h3>
+
+                            <p className="text-sm leading-6 text-black/65">
+                                {item.description}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* Note */}
+            <section className="px-5 py-8">
+                <div className="rounded-2xl border border-black/10 p-4 bg-white">
+                    <p className="text-[12px] leading-5 text-black/60 mb-3">
+                        RideMate captain onboarding depends on document verification, vehicle details, location availability, and platform rules.
+                    </p>
+
+                    <p className="text-[12px] leading-5 text-black/60">
+                        Ride requests and earnings may vary based on city, demand, captain availability, and completed trips.
+                    </p>
+                </div>
+            </section>
 
             {/* Footer */}
-            < footer className="bg-black text-white px-7 py-12" >
-                <h2 className="text-xl mb-10">Uber</h2>
+            <footer className="bg-black text-white px-5 pt-10 pb-28">
+                <div className="flex items-center gap-2 mb-7">
+                    <span className="h-9 w-9 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold">
+                        RM
+                    </span>
 
-                <p className="mb-16">Visit Help Center</p>
-
-                <h3 className="font-bold text-lg mb-5">Company</h3>
-                <div className="space-y-4 text-sm mb-14">
-                    <p>About us</p>
-                    <p>Our offerings</p>
-                    <p>Newsroom</p>
-                    <p>Investors</p>
-                    <p>Blog</p>
-                    <p>Careers</p>
-                    <p>Uber One</p>
+                    <h2 className="text-xl font-semibold">
+                        RideMate
+                    </h2>
                 </div>
 
-                <h3 className="font-bold text-lg mb-5">Products</h3>
-                <div className="space-y-4 text-sm">
-                    <p>Ride</p>
-                    <p>Drive</p>
-                    <p>Eat</p>
-                </div>
-            </footer >
+                <p className="text-sm text-white/70 mb-8">
+                    Ride smart. Drive better.
+                </p>
 
-            {/* Bottom Button */}
-            < div className="fixed bottom-0 left-0 right-0 bg-white px-4 py-3 z-50" >
-                <Link to={"/register"}>
-                    <button className="w-full bg-black text-white py-4 rounded-lg font-semibold active:scale-95 transition">
-                        Sign up to drive
+                <div className="space-y-8">
+                    <div>
+                        <h3 className="font-bold text-base mb-4">
+                            Company
+                        </h3>
+
+                        <div className="space-y-3 text-sm text-white/75">
+                            <p>About RideMate</p>
+                            <p>Captain program</p>
+                            <p>Help center</p>
+                            <p>Careers</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className="font-bold text-base mb-4">
+                            Platform
+                        </h3>
+
+                        <div className="space-y-3 text-sm text-white/75">
+                            <p>Ride booking</p>
+                            <p>Captain dashboard</p>
+                            <p>Live ride tracking</p>
+                            <p>Ride safety</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+            <div className="fixed bottom-0 left-0 right-0 bg-white px-4 py-3 z-50 border-t border-black/10">
+                <Link to="/register">
+                    <button className="w-full h-12 bg-black text-white rounded-xl font-semibold text-sm active:scale-95 transition">
+                        Sign up as captain
                     </button>
                 </Link>
-            </div >
-        </div >
-    );
-};
+            </div>
+        </div>
+    )
+}
 
-export default Home;
+export default Home

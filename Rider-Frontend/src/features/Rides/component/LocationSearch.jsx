@@ -23,26 +23,27 @@ const LocationSearch = ({
   <div className="h-full flex flex-col font-sans">
     {/* Header */}
     <div className="shrink-0">
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-black">
-            {activeField === "pickup" ? "Search pickup" : "Search destination"}
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            {activeField === "pickup"
-              ? "Choose your pickup location"
-              : "Choose where you want to go"}
-          </p>
-        </div>
+      <div className="flex items-center justify-between mb-4">
+  <div className="pr-4">
+    <h2 className="text-[20px] leading-6 font-bold tracking-tight text-black pt-2">
+      {activeField === "pickup" ? "Search pickup" : "Search destination"}
+    </h2>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-sm font-bold text-black bg-[#f3f3f3] px-4 py-2 rounded-full active:scale-95 transition"
-        >
-          Back
-        </button>
-      </div>
+    <p className="text-[12px] leading-5 text-gray-500 mt-1">
+      {activeField === "pickup"
+        ? "Choose your pickup location"
+        : "Choose where you want to go"}
+    </p>
+  </div>
+
+  <button
+    type="button"
+    onClick={onClose}
+    className="h-9 px-4 rounded-full bg-[#f3f3f3] text-[13px] font-semibold text-black active:scale-95 transition shrink-0"
+  >
+    Back
+  </button>
+</div>
 
       {/* Search Input Card */}
       <div className="bg-white rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.10)] border border-gray-100 p-3 mb-4">

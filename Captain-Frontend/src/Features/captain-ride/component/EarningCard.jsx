@@ -1,17 +1,29 @@
 const EarningCard = ({ icon, title, value, subtitle }) => {
   return (
-    <div className="rounded-3xl bg-gray-50 p-5 border border-gray-100">
-      <div className="w-11 h-11 rounded-2xl bg-white shadow-sm flex items-center justify-center text-black mb-4">
-        {icon}
+    <div className="relative overflow-hidden rounded-2xl bg-white p-4 border border-black/10 shadow-[0_8px_24px_rgba(0,0,0,0.06)] active:scale-[0.98] transition">
+      <div className="absolute -top-8 -right-8 w-20 h-20 rounded-full bg-black/5"></div>
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-5">
+          <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center text-lg shadow-sm">
+            {icon}
+          </div>
+
+          <span className="text-[11px] font-semibold text-black/50 bg-[#f3f3f3] px-2.5 py-1 rounded-full">
+            {subtitle}
+          </span>
+        </div>
+
+        <p className="text-[12px] leading-4 text-gray-500 font-medium">
+          {title}
+        </p>
+
+        <h3 className="text-[24px] leading-[30px] font-bold text-black mt-1 tracking-tight">
+          {value}
+        </h3>
       </div>
-
-      <p className="text-sm text-gray-500">{title}</p>
-
-      <h3 className="text-2xl font-bold text-black mt-1">{value}</h3>
-
-      <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
     </div>
-  );
-};
+  )
+}
 
-export default EarningCard;
+export default EarningCard
