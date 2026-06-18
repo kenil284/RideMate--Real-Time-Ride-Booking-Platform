@@ -16,138 +16,136 @@ const RideRequest = ({ ride, onAccept, onCancel, acceptingRide }) => {
   const vehicleImage = vehicleImages[ride.vehicle?.type];
 
   return (
-    <div className="ride-request-enter">
-      <div className="mb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-semibold mb-3">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          New request nearby
-        </div>
-
-        <h2 className="text-[24px] font-bold text-black leading-tight">
-          Ride request
-        </h2>
-
-        <p className="text-sm text-gray-500 mt-1">
-          Review trip details and choose your action
-        </p>
+  <div className="ride-request-enter">
+    <div className="mb-4">
+      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 text-[11px] font-bold mb-3">
+        <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+        New request nearby
       </div>
 
-      <div className="rounded-[30px] bg-white border border-gray-100 shadow-[0_12px_35px_rgba(0,0,0,0.09)] p-5">
-        {/* fare + vehicle */}
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
+      <h2 className="text-[22px] leading-[28px] font-bold tracking-tight text-black">
+        Ride request
+      </h2>
+
+      <p className="text-sm leading-6 text-gray-500 mt-0.5">
+        Review trip details and choose your action
+      </p>
+    </div>
+
+    <div className="rounded-[26px] bg-white border border-gray-100 shadow-[0_8px_26px_rgba(0,0,0,0.08)] p-4">
+      {/* fare + vehicle */}
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+            Estimated fare
+          </p>
+
+          <h1 className="text-[32px] font-bold text-black leading-none mt-2">
+            ₹{ride.fare}
+          </h1>
+        </div>
+
+        <div className="w-[92px] h-[76px] rounded-[24px] bg-gray-50 flex items-center justify-center shrink-0">
+          {vehicleImage ? (
+            <img
+              src={vehicleImage}
+              alt="vehicle"
+              className="w-[78px] h-[78px] object-contain"
+            />
+          ) : (
+            <FaCar className="text-3xl text-black" />
+          )}
+        </div>
+      </div>
+
+      {/* time distance */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="rounded-[22px] bg-gray-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-gray-500 text-[12px] font-medium">
+            <FaClock />
+            Time
+          </div>
+
+          <p className="text-[18px] font-bold text-black mt-1.5">
+            {ride.durationMin} min
+          </p>
+        </div>
+
+        <div className="rounded-[22px] bg-gray-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-gray-500 text-[12px] font-medium">
+            <FaRoad />
+            Distance
+          </div>
+
+          <p className="text-[18px] font-bold text-black mt-1.5">
+            {ride.distanceKm} km
+          </p>
+        </div>
+      </div>
+
+      {/* route */}
+      <div className="rounded-[24px] bg-gray-50 p-4 mb-4">
+        <div className="relative pl-8">
+          <div className="absolute left-[7px] top-5 bottom-6 w-[2px] bg-gray-200 rounded-full" />
+
+          <div className="relative mb-5">
+            <span className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-black ring-4 ring-white" />
+
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-              Estimated fare
+              Pickup
             </p>
 
-            <h1 className="text-[34px] font-bold text-black leading-none mt-2">
-              ₹{ride.fare}
-            </h1>
+            <h4 className="text-[14.5px] font-bold text-black leading-5 mt-1">
+              {trimAddress(ride.pickup?.address)}
+            </h4>
           </div>
 
-          <div className="w-24 h-20 rounded-3xl bg-gray-50 flex items-center justify-center">
-            {vehicleImage ? (
-              <img
-                src={vehicleImage}
-                alt="vehicle"
-                className="w-20 h-20 object-contain"
-              />
-            ) : (
-              <FaCar className="text-3xl text-black" />
-            )}
-          </div>
-        </div>
+          <div className="relative">
+            <span className="absolute -left-8 top-1 w-4 h-4 rounded-md bg-black ring-4 ring-white" />
 
-        {/* time distance */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="rounded-2xl bg-gray-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-              <FaClock />
-              Time
-            </div>
-
-            <p className="text-lg font-bold text-black mt-1">
-              {ride.durationMin} min
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+              Destination
             </p>
-          </div>
 
-          <div className="rounded-2xl bg-gray-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-gray-500 text-xs font-medium">
-              <FaRoad />
-              Distance
-            </div>
-
-            <p className="text-lg font-bold text-black mt-1">
-              {ride.distanceKm} km
-            </p>
+            <h4 className="text-[14.5px] font-bold text-black leading-5 mt-1">
+              {trimAddress(ride.destination?.address)}
+            </h4>
           </div>
         </div>
+      </div>
 
-        {/* route */}
-        <div className="rounded-[24px] bg-gray-50 p-4 mb-5">
-          <div className="relative pl-8">
-            <div className="absolute left-[7px] top-5 bottom-6 w-[2px] bg-gray-200" />
+      {/* buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => onCancel(ride)}
+          disabled={acceptingRide}
+          className="h-[52px] rounded-[18px] bg-gray-100 text-black font-bold text-[15px] active:scale-[0.97] transition disabled:opacity-60"
+        >
+          Cancel
+        </button>
 
-            <div className="relative mb-5">
-              <span className="absolute -left-8 top-1 w-4 h-4 rounded-full bg-black ring-4 ring-white" />
-
-              <p className="text-[11px] font-bold text-gray-400 uppercase">
-                Pickup
-              </p>
-
-              <h4 className="text-[14px] font-semibold text-black leading-snug mt-1">
-                {trimAddress(ride.pickup?.address)}
-              </h4>
-            </div>
-
-            <div className="relative">
-              <span className="absolute -left-8 top-1 w-4 h-4 rounded-md bg-black ring-4 ring-white" />
-
-              <p className="text-[11px] font-bold text-gray-400 uppercase">
-                Destination
-              </p>
-
-              <h4 className="text-[14px] font-semibold text-black leading-snug mt-1">
-                {trimAddress(ride.destination?.address)}
-              </h4>
-            </div>
-          </div>
-        </div>
-
-        {/* buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => onCancel(ride)}
-            disabled={acceptingRide}
-            className="h-14 rounded-2xl bg-gray-100 text-black font-bold active:scale-95 transition"
-          >
-            Cancel
-          </button>
-
-          <button
-            onClick={() => onAccept(ride)}
-            disabled={acceptingRide}
-            className={`
-    h-14 rounded-2xl font-bold shadow-lg transition flex items-center justify-center gap-2
-    ${acceptingRide
-                ? "bg-black/80 text-white cursor-not-allowed"
-                : "bg-black text-white active:scale-95"
-              }
-  `}
-          >
-            {acceptingRide ? (
-              <>
-                <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                Accepting...
-              </>
-            ) : (
-              "Accept"
-            )}
-          </button>
-        </div>
+        <button
+          onClick={() => onAccept(ride)}
+          disabled={acceptingRide}
+          className={`h-[52px] rounded-[18px] font-bold text-[15px] transition flex items-center justify-center gap-2 ${
+            acceptingRide
+              ? "bg-black/80 text-white cursor-not-allowed"
+              : "bg-black text-white active:scale-[0.97]"
+          }`}
+        >
+          {acceptingRide ? (
+            <>
+              <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              Accepting...
+            </>
+          ) : (
+            "Accept"
+          )}
+        </button>
       </div>
     </div>
-  );
+  </div>
+)
 };
 
 export default RideRequest;

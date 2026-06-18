@@ -58,10 +58,10 @@ export const useCaptainSocket = ({ setCurrentRide,setRequests, setStage }) => {
     })
 
     socket.on("ride-cancelled-by-rider", ({ ride }) => {
-   
+
+    setRequests([])
     setCurrentRide(null)
     setStage("looking")
-    
 
     openalert("Info", "Rider cancelled the ride")
 })

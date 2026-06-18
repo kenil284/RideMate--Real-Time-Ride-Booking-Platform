@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 
 import BottomSheet from "../component/BottomSheet";
 import LocationForm from "../component/LocationForm";
@@ -24,8 +24,10 @@ import { IoMenu } from "react-icons/io5";
 const Ride = () => {
     const [stage, setStage] = useState("loading");
     const [activeField, setActiveField] = useState("pickup");
-    const { userData,openalert, setuserData, setLogin } = useContext(userContext)
+    const { userData, openalert, setuserData, setLogin } = useContext(userContext)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+    const askedLocationRef = useRef(false)
 
     // const [rideData, setRideData] = useState({
     //     rideId: "",
@@ -114,6 +116,17 @@ const Ride = () => {
         },
     })
 
+    useEffect(() => {
+        if (stage !== "location") return
+        if (askedLocationRef.current) return
+
+        askedLocationRef.current = true
+
+        setTimeout(() => {
+            getCurrentLocation()
+        }, 500)
+    }, [stage])
+
     const { searchValue, suggestions, isSearching } = useLocationSearch({
         stage,
         activeField,
@@ -129,7 +142,7 @@ const Ride = () => {
         }))
     }
 
-    const { getCurrentLocation, isLocationLoading } = useCurrentLocation(setRideData, setStage)
+    const { getCurrentLocation, isLocationLoading } = useCurrentLocation(setRideData, setStage, openalert)
 
 
     const { createRide, isRideCreating } = useCreateRide()
@@ -192,12 +205,12 @@ const Ride = () => {
 
             openalert("Success", "Logout successfully")
 
-            navigate("/login",{ replace: true })
+            navigate("/login", { replace: true })
         } catch (error) {
             setuserData(null)
             setLogin(false)
 
-            navigate("/login",{ replace: true })
+            navigate("/login", { replace: true })
         }
     }
 
@@ -255,7 +268,7 @@ const Ride = () => {
 
 
     const confirmRide = async () => {
-         if (isRideCreating) return
+        if (isRideCreating) return
 
         const payload = {
             pickup: rideData.pickup,
@@ -339,34 +352,34 @@ const Ride = () => {
 
     const [isRideCancelling, setIsRideCancelling] = useState(false)
 
-   const handleCancelRide = async () => {
-    try {
-        if (isRideCancelling) return
+    const handleCancelRide = async () => {
+        try {
+            if (isRideCancelling) return
 
-        setIsRideCancelling(true)
+            setIsRideCancelling(true)
 
-        const rideId = rideData._id || rideData.rideId
+            const rideId = rideData._id || rideData.rideId
 
-        if (!rideId) return
+            if (!rideId) return
 
-        await cancelRideByUserService({
-            rideId,
-            cancelReason: "Cancelled by rider",
-        })
+            await cancelRideByUserService({
+                rideId,
+                cancelReason: "Cancelled by rider",
+            })
 
-        resetRideData()
+            resetRideData()
 
-        setStage("location")
+            setStage("location")
 
-    } catch (error) {
-        openalert(
-            "Error",
-            error.response?.data?.message || "Failed to cancel ride"
-        )
-    } finally {
-        setIsRideCancelling(false)
+        } catch (error) {
+            openalert(
+                "Error",
+                error.response?.data?.message || "Failed to cancel ride"
+            )
+        } finally {
+            setIsRideCancelling(false)
+        }
     }
-}
 
 
     const isCaptainTracking =
@@ -396,9 +409,10 @@ const Ride = () => {
                     showVehicleMarker={isCaptainTracking}
                 />
             </div>
-        
+
             {/* Small top gradient */}
-            <div className="fixed top-0 left-0 right-0 z-[9999] h-[125px] bg-gradient-to-b from-white/85 via-white/35 to-transparent px-4 pt-4 pointer-events-none">
+            {/* Top header */}
+            <div className="fixed top-0 left-0 right-0 z-[9999] px-4 pt-4 pointer-events-none">
                 <div className="max-w-[430px] mx-auto pointer-events-auto">
                     <div className="rounded-[30px] bg-[#111217]/95 text-white shadow-[0_20px_55px_rgba(0,0,0,0.32)] border border-white/10 backdrop-blur-xl px-3 py-3">
                         <div className="flex items-center gap-3">

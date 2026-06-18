@@ -44,7 +44,7 @@ const Map2 = ({
 
   const getVehicleImage = () => {
     if (vehicleType === "bike") return "/Bike/bike-back.webp"
-    if (vehicleType === "car") return "/Car/car-back.webp"
+    if (vehicleType === "car") return "/car_3d.png"
     if (vehicleType === "auto") return "/Auto.png"
 
     return "/Bike/bike-back.webp"
@@ -516,6 +516,11 @@ const Map2 = ({
   }
 
   const getRoutePath = (coordinates = routeCoordinatesRef.current) => {
+    if (!pickup) {
+      lastValidRouteRef.current = []
+      return []
+    }
+
     const route = formatRouteCoordinates(coordinates)
 
     if (route.length >= 2) {
@@ -716,6 +721,16 @@ const Map2 = ({
       lat: captainLngLat[1],
     })
   }, [currentLocation])
+
+  useEffect(() => {
+    if (pickup) return
+
+    lastValidRouteRef.current = []
+    routeCoordinatesRef.current = []
+
+    clearRouteCanvas()
+    removePickupMarker()
+  }, [pickup])
 
   useEffect(() => {
     if (!navigator.geolocation) return
