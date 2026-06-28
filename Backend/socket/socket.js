@@ -7,6 +7,7 @@ import userModel from "../models/user.model.js";
 
 let captainSocket;
 let userSocket;
+let trackingSocket;
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -26,6 +27,7 @@ export const initSocket = (server) => {
 
   captainSocket = io.of("/captain");
   userSocket = io.of("/user");
+  trackingSocket = io.of("/tracking")
 
   // auth middleware
   captainSocket.use(async (socket, next) => {
@@ -80,7 +82,6 @@ export const initSocket = (server) => {
 
   captainSocket.on("connection", (socket) => {
 
-
     // room name is captain collection _id
     socket.join(socket.captainId);
 
@@ -102,18 +103,24 @@ export const initSocket = (server) => {
 
 
   userSocket.on("connection", (socket) => {
-
-
     // room name is user collection id
     socket.join(socket.userId);
 
-
-
     socket.on("disconnect", () => {
-
 
     })
   })
+
+  trackingSocket.on("connection", (socket) => {
+
+  socket.on("join-tracking", (trackingToken) => {
+
+    if (!trackingToken) return
+
+    socket.join(trackingToken)
+  })
+
+})
 
   console.log("Socket initialized");
 };
@@ -133,4 +140,12 @@ export const getUserSocket = () => {
 
   return userSocket;
 };
+
+export const getTrackingSocket = () => {
+  if (!trackingSocket) {
+    throw new Error("User socket not initialized");
+  }
+
+  return trackingSocket
+}
 

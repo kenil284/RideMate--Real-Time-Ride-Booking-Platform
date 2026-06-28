@@ -34,6 +34,8 @@ const Map2 = ({
   const lastVehicleImageRef = useRef("")
   const routeCanvasRef = useRef(null)
 
+  const [isMapLoaded, setIsMapLoaded] = useState(false)
+
   const defaultPosition = {
     lat: 21.1702,
     lng: 72.8311,
@@ -828,15 +830,18 @@ const Map2 = ({
         map.resize()
         getRouteCanvas(map)
         add3DBuildings(map)
-        syncMarkers()
 
-        const finalRoute = formatRouteCoordinates(routeCoordinatesRef.current)
+        // Tell React the map is completely ready!
+        setIsMapLoaded(true)
+        // syncMarkers()
 
-        if (finalRoute.length >= 2) {
-          fitMapToRoute(map, finalRoute)
-        }
+        // const finalRoute = formatRouteCoordinates(routeCoordinatesRef.current)
 
-        syncRouteCanvas(map)
+        // if (finalRoute.length >= 2) {
+        //   fitMapToRoute(map, finalRoute)
+        // }
+
+        // syncRouteCanvas(map)
       })
 
       map.on("error", (e) => {
@@ -890,7 +895,7 @@ const Map2 = ({
   }, [])
 
   useEffect(() => {
-    if (!mapRef.current) return
+    if (!mapRef.current || !isMapLoaded) return
 
     const bearing = showVehicleMarker ? getNavigationBearing() : 0
 
@@ -906,7 +911,7 @@ const Map2 = ({
 
     updateMainMarker()
     syncRouteCanvas(mapRef.current)
-  }, [position, showVehicleMarker])
+  }, [position, showVehicleMarker,isMapLoaded])
 
   useEffect(() => {
     if (!mapRef.current) return

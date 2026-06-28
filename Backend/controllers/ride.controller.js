@@ -1,9 +1,11 @@
 import { validationResult } from "express-validator";
 import rideModel from "../models/ride.model.js";
 import { findNearbyCaptainsForRide } from "../services/captain.service.js";
-import { removeRideRequestFromCaptains, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCancelledToCaptain, sendRideCancelledToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
+import { removeRideRequestFromCaptains, sendCaptainLocationToTracker, sendNoCaptainFoundToUser, sendRideAcceptedToUser, sendRideCancelledToCaptain, sendRideCancelledToUser, sendRideCompletedToUser, sendRideExpiredToCaptains, sendRideRequestToCaptains, sendRideStartedToUser } from "../socket/socket.emit.js";
 import captainModel from "../models/captain.model.js";
 import { getDistanceTimeService } from "../services/maps.service.js";
+import { getTrackingData } from "../services/getTrackingData.service.js";
+import crypto from "crypto"
 
 /**
  * @name createRideController
@@ -242,7 +244,7 @@ export const acceptRideController = async (req, res) => {
         const captainId = req.captainId
         const { rideId } = req.params
 
-        
+
 
         const ride = await rideModel.findOneAndUpdate(
             {
@@ -268,8 +270,6 @@ export const acceptRideController = async (req, res) => {
                 message: "Ride already accepted or not available",
             })
         }
-
-        
 
         await captainModel.findByIdAndUpdate(captainId, {
             $set: {
@@ -317,12 +317,12 @@ export const startRideController = async (req, res) => {
         }
 
         const ride = await rideModel.findOne({
-                _id: rideId,
-                captain: captainId,
-                status: {
-                    $in: ["accepted", "arrived"],
-                },
-            })
+            _id: rideId,
+            captain: captainId,
+            status: {
+                $in: ["accepted", "arrived"],
+            },
+        })
             .select("+otp")
 
         if (!ride) {
@@ -345,7 +345,11 @@ export const startRideController = async (req, res) => {
             ride.arrivedAt = new Date()
         }
 
+        ride.trackingToken = crypto.randomBytes(24).toString("hex")
+
         await ride.save()
+
+        console.log(ride)
 
         const startedRide = await rideModel.findById(ride._id)
             .populate("rider", "fullname phone")
@@ -404,8 +408,30 @@ export const getCaptainToDestinationRouteController = async (req, res) => {
             pickupLng: currentLng,
             destinationLat,
             destinationLng,
-            mode : getRouteMode(vehicleType),
+            mode: getRouteMode(vehicleType),
         })
+
+        const ride = await rideModel.findOne({
+            captain: captainId,
+            status: "started"
+        })
+
+      
+
+        if (ride?.trackingToken) {
+            sendCaptainLocationToTracker({
+                trackingToken: ride.trackingToken,
+                rideId: ride._id,
+                lat: currentLat,
+                lng: currentLng,
+                distanceKm: routeData.distanceKm,
+                durationMin: routeData.durationMin,
+                routeCoordinates: routeData.routeCoordinates,
+            })
+
+        }
+
+
 
         return res.status(200).json({
             message: "Captain destination route fetched successfully",
@@ -414,6 +440,9 @@ export const getCaptainToDestinationRouteController = async (req, res) => {
             routeCoordinates: routeData.routeCoordinates,
             instructions: routeData.instructions || [],
         })
+
+
+
     } catch (error) {
         return res.status(500).json({
             message: error.message,
@@ -596,10 +625,52 @@ export const cancelRideByCaptainController = async (req, res) => {
         })
 
     } catch (error) {
-
-
         return res.status(500).json({
             message: "Failed to cancel ride",
         })
     }
+}
+
+
+
+
+export const getTrackingController = async (req, res) => {
+    try {
+        const { token } = req.params
+
+        if (!token) {
+            return res.status(400).json({
+                message: "Tracking token required"
+            })
+        }
+
+        const ride = await rideModel.findOne({ trackingToken: token, status: "started" }).populate("captain")
+
+
+    
+
+        if (!ride) {
+            return res.status(404).json({
+                message: "Tracking unavailable"
+            })
+        }
+
+        const tracking = await getTrackingData(ride)
+
+
+
+        return res.status(200).json({
+            ride,
+            tracking,
+        })
+    }
+
+    catch (error) {
+
+        return res.status(500).json({
+            
+            message: error.message
+        })
+    }
+
 }

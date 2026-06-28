@@ -20,10 +20,10 @@ const BottomSheet = ({ stage, contentKey, children }) => {
     const currentHeight = sheet.offsetHeight;
 
 
-    const targetHeight =
-      stage === "navigating"
-        ? Math.max(window.innerHeight * 0.17, 112)
-        : content.scrollHeight;
+    const targetHeight = content.scrollHeight;
+      // stage === "navigating"
+      //   ? Math.max(window.innerHeight * 0.17, 112)
+        // : 
 
     if (isFirstRender.current) {
       gsap.set(sheet, { height: targetHeight });
@@ -51,8 +51,8 @@ const BottomSheet = ({ stage, contentKey, children }) => {
         ref={contentRef}
         className={`
         w-full max-w-[430px] mx-auto px-5 py-4
-        ${stage === "navigating" ? "py-3" : ""}
-        ${stage === "accepted" ? "pt-2" : ""}
+        // ${stage === "navigating" ? "py-3" : ""}
+        // ${stage === "accepted" ? "pt-2" : ""}
       `}
       >
         <div className="mx-auto h-1.5 w-12 rounded-full bg-gray-300 mb-5" />

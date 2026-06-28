@@ -156,6 +156,11 @@ const rideSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        trackingToken: {
+            type: String,
+            default: null,
+            index: true,
+        },
 
         expiresAt: {
             type: Date,
@@ -167,7 +172,7 @@ const rideSchema = new mongoose.Schema(
 
 rideSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 
-rideSchema.index({ rider: 1 , status: 1});
+rideSchema.index({ rider: 1, status: 1 });
 rideSchema.index({ captain: 1, status: 1 });
 
 const rideModel = mongoose.model("Ride", rideSchema);

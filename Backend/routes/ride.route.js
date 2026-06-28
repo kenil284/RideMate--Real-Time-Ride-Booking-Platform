@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { authCaptain, authUser } from "../middlewares/auth.middleware.js";
-import { acceptRideController, cancelRideByCaptainController, cancelRideByUserController, completeRideController, createRideController, getActiveRideController, getCaptainActiveRideController, startRideController } from "../controllers/ride.controller.js";
+import { acceptRideController, cancelRideByCaptainController, cancelRideByUserController, completeRideController, createRideController, getActiveRideController, getCaptainActiveRideController, getTrackingController, startRideController } from "../controllers/ride.controller.js";
 
 
 export const createRideValidator = [
@@ -112,5 +112,7 @@ rideRouter.post("/cancel/user/:rideId",authUser,cancelRideByUserController)
 
 
 rideRouter.post("/cancel/captain/:rideId",authCaptain,cancelRideByCaptainController)
+
+rideRouter.get("/tracking/:token",getTrackingController)
 
 export default rideRouter;

@@ -1,4 +1,4 @@
-import { getCaptainSocket, getUserSocket } from "./socket.js";
+import { getCaptainSocket, getTrackingSocket, getUserSocket } from "./socket.js";
 
 export const sendRideRequestToCaptains = (captains, ride) => {
   const captainSocket = getCaptainSocket();
@@ -48,7 +48,7 @@ export const removeRideRequestFromCaptains = (rideId) => {
   })
 }
 
-export const sendCaptainLocationToRider = ({ riderId, rideId, lat, lng,distanceKm,durationMin, routeCoordinates }) => {
+export const sendCaptainLocationToRider = ({ riderId, rideId, lat, lng, distanceKm, durationMin, routeCoordinates }) => {
   const userSocket = getUserSocket()
 
 
@@ -64,34 +64,57 @@ export const sendCaptainLocationToRider = ({ riderId, rideId, lat, lng,distanceK
   })
 }
 
-export const sendRideStartedToUser = (userId, ride) => {
-    const userSocket = getUserSocket()
 
-    userSocket.to(userId.toString()).emit("ride-started", {
-        ride,
-    })
+
+
+export const sendRideStartedToUser = (userId, ride) => {
+  const userSocket = getUserSocket()
+
+  userSocket.to(userId.toString()).emit("ride-started", {
+    ride,
+  })
+}
+
+
+export const sendCaptainLocationToTracker = ({ trackingToken, rideId, lat, lng, distanceKm, durationMin, routeCoordinates, }) => {
+ console.log(trackingToken)
+  if (!trackingToken) return
+
+  const trackingSocket = getTrackingSocket()
+
+ 
+
+  trackingSocket.to(trackingToken).emit("tracking-location-updated", {
+    rideId: rideId.toString(),
+    lat: Number(lat),
+    lng: Number(lng),
+    distanceKm,
+    durationMin,
+    routeCoordinates,
+  }
+  )
 }
 
 export const sendRideCompletedToUser = (userId, ride) => {
-    const userSocket = getUserSocket()
+  const userSocket = getUserSocket()
 
-    userSocket.to(userId.toString()).emit("ride-completed", {
-        ride,
-    })
+  userSocket.to(userId.toString()).emit("ride-completed", {
+    ride,
+  })
 }
 
 export const sendRideCancelledToCaptain = (captainId, ride) => {
-    const captainSocket = getCaptainSocket()
+  const captainSocket = getCaptainSocket()
 
-    captainSocket.to(captainId.toString()).emit("ride-cancelled-by-rider", {
-        ride,
-    })
+  captainSocket.to(captainId.toString()).emit("ride-cancelled-by-rider", {
+    ride,
+  })
 }
 
 export const sendRideCancelledToUser = (userId, ride) => {
-    const userSocket = getUserSocket()
+  const userSocket = getUserSocket()
 
-    userSocket.to(userId.toString()).emit("ride-cancelled-by-captain", {
-        ride,
-    })
+  userSocket.to(userId.toString()).emit("ride-cancelled-by-captain", {
+    ride,
+  })
 }

@@ -200,18 +200,19 @@ export const getDistanceTimeService = async ({
     destinationLng,
     mode = "drive",
 }) => {
-    if (!pickupLat || !pickupLng || !destinationLat || !destinationLng) {
+    
+    if (pickupLat == null || pickupLng == null || destinationLat == null || destinationLng == null) {
         throw new Error("Pickup and destination coordinates are required")
     }
 
-
-    const response = await axios.get("https://api.geoapify.com/v1/routing", {
+        const response = await axios.get("https://api.geoapify.com/v1/routing", {
         params: {
             waypoints: `${pickupLat},${pickupLng}|${destinationLat},${destinationLng}`,
             mode,
             apiKey: process.env.GEOAPIFY_API_KEY,
         },
     })
+    
 
     const route = response.data.features?.[0]
 

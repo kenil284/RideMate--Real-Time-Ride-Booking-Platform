@@ -81,7 +81,6 @@ export const getCaptainToPickupRouteController = async (req, res) => {
         }
 
 
-
         return res.status(200).json({
             message: "Captain pickup route fetched successfully",
             distanceKm: routeData.distanceKm,
